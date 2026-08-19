@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Laboratorio STEM: Energía en Acción</title>
+<meta name="theme-color" content="#0f4c3a">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lab STEM Energía">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-icon">⚡</span>
+    <div>
+      <h1>Laboratorio STEM: Energía en Acción</h1>
+      <p class="subtitle">Física y matemáticas del Generador Giratorio y la Calculadora de Lata</p>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-view="inicio">Inicio</button>
+    <button class="tab" data-view="generador">Generador Giratorio</button>
+    <button class="tab" data-view="calculadora">Calculadora de Lata</button>
+    <button class="tab" data-view="comparativa">Comparativa</button>
+  </nav>
+</header>
+
+<main id="main">
+
+  <!-- ============ INICIO ============ -->
+  <section class="view active" id="view-inicio">
+    <div class="card intro">
+      <h2>Bienvenido/a a tu proyecto STEM</h2>
+      <p>Esta aplicación te ayuda a <strong>ver la física y las matemáticas</strong> detrás de tus dos experimentos:
+      cómo se genera electricidad a partir del <strong>movimiento</strong> (inducción electromagnética) y a partir de
+      <strong>reacciones químicas</strong> (una pila galvánica). Cada módulo tiene:</p>
+      <ul class="feature-list">
+        <li><span>🧮</span> Fórmulas y calculadoras interactivas para explorar cada variable.</li>
+        <li><span>📊</span> Una sección de <strong>mediciones</strong> donde registras tus datos reales y ves gráficas.</li>
+        <li><span>🎛️</span> Animaciones que responden a los valores que cambies.</li>
+      </ul>
+    </div>
+
+    <div class="grid2">
+      <button class="card link-card" data-goto="generador">
+        <div class="link-card-icon">🌀</div>
+        <h3>Generador Giratorio</h3>
+        <p>Inducción electromagnética: convierte el giro de un trompo con imanes en electricidad para encender un LED.</p>
+        <span class="pill">Ley de Faraday</span>
+      </button>
+      <button class="card link-card" data-goto="calculadora">
+        <div class="link-card-icon">🥫</div>
+        <h3>Calculadora de Lata</h3>
+        <p>Electroquímica: dos latas de aluminio con agua salada y lápices de grafito forman una pila que enciende una calculadora.</p>
+        <span class="pill">Pila aluminio-aire</span>
+      </button>
+    </div>
+
+    <div class="card">
+      <h3>Cómo instalar esta aplicación</h3>
+      <div class="grid2">
+        <div>
+          <h4>💻 En esta computadora</h4>
+          <p>Ya tienes un acceso directo en el Escritorio llamado <strong>"Lab STEM Energía"</strong>. Haz doble clic
+          para abrir la app en su propia ventana, sin necesidad de internet.</p>
+        </div>
+        <div>
+          <h4>📱 En una tablet (iPad o Android)</h4>
+          <p>Conecta la tablet a la <strong>misma red Wi-Fi</strong> que esta computadora, abre el navegador y entra a
+          la dirección que te indique la ventana de la app (algo como <code>http://192.168.x.x:8877</code>). Luego:</p>
+          <p><strong>iPad (Safari):</strong> toca Compartir → "Añadir a pantalla de inicio".<br>
+          <strong>Android (Chrome):</strong> toca el menú ⋮ → "Instalar aplicación".</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GENERADOR GIRATORIO ============ -->
+  <section class="view" id="view-generador">
+    <div class="card">
+      <h2>🌀 Generador Giratorio — Inducción Electromagnética</h2>
+      <p>Cuando el trompo con imanes gira sobre la bobina de alambre, el campo magnético que atraviesa la bobina
+      cambia constantemente. Ese cambio <strong>induce</strong> un voltaje (una corriente eléctrica) según la
+      <strong>Ley de Faraday-Lenz</strong>, descubierta por Michael Faraday.</p>
+      <div class="formula-box">
+        ε = −N · (dΦ/dt) &nbsp;&nbsp;&nbsp; con &nbsp;&nbsp;&nbsp; Φ = B · A · cos(θ)
+      </div>
+      <p class="formula-note">
+        <strong>ε</strong> = voltaje inducido (V) · <strong>N</strong> = número de vueltas de la bobina ·
+        <strong>Φ</strong> = flujo magnético (Wb) · <strong>B</strong> = campo magnético (T) ·
+        <strong>A</strong> = área de la espira (m²) · <strong>θ</strong> = ángulo entre el imán y la bobina.
+        El signo negativo (Ley de Lenz) indica que la corriente inducida se opone al cambio que la produce.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="diagram-row">
+        <svg id="gen-diagram" viewBox="0 0 320 260" class="diagram touch-diagram">
+          <defs>
+            <filter id="led-glow" x="-100%" y="-100%" width="300%" height="300%">
+              <feGaussianBlur stdDeviation="6" result="blur"/>
+              <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          <circle id="gen-coil" cx="160" cy="180" r="70" fill="none" stroke="#c8a24a" stroke-width="4"/>
+          <circle cx="160" cy="180" r="52" fill="none" stroke="#c8a24a" stroke-width="3" opacity="0.7"/>
+          <circle cx="160" cy="180" r="34" fill="none" stroke="#c8a24a" stroke-width="3" opacity="0.5"/>
+          <g id="gen-rotor" class="draggable">
+            <circle cx="160" cy="180" r="34" fill="transparent"/>
+            <circle cx="160" cy="180" r="30" fill="#3a3f47"/>
+            <circle cx="160" cy="152" r="8" fill="#e05353"/>
+            <circle cx="188" cy="180" r="8" fill="#3959c9"/>
+            <circle cx="160" cy="208" r="8" fill="#e05353"/>
+            <circle cx="132" cy="180" r="8" fill="#3959c9"/>
+          </g>
+          <line x1="160" y1="150" x2="160" y2="40" stroke="#8a8f98" stroke-width="4"/>
+          <polygon points="130,40 190,40 175,15 145,15" fill="#8a8f98"/>
+          <circle id="gen-led" cx="160" cy="10" r="10" fill="#900"/>
+          <text x="160" y="245" text-anchor="middle" class="diagram-label">Bobina + trompo con imanes</text>
+          <text id="gen-touch-hint" x="160" y="180" text-anchor="middle" class="diagram-hint">👆 Arrastra para girar</text>
+        </svg>
+        <div class="gauge-wrap">
+          <svg id="gen-gauge" viewBox="0 0 240 150" class="gauge">
+            <path id="gauge-track" d="" fill="none" stroke="#26334a" stroke-width="14" stroke-linecap="round"/>
+            <path id="gauge-value" d="" fill="none" stroke="#3ddc97" stroke-width="14" stroke-linecap="round"/>
+            <line id="gauge-threshold" x1="0" y1="0" x2="0" y2="0" stroke="#ffd13c" stroke-width="4"/>
+            <line id="gauge-needle" x1="120" y1="130" x2="120" y2="40" stroke="#eaf2ef" stroke-width="3"/>
+            <circle cx="120" cy="130" r="7" fill="#eaf2ef"/>
+            <text x="120" y="128" text-anchor="middle" id="gauge-rpm-label" class="gauge-label">0 RPM</text>
+            <text x="120" y="144" text-anchor="middle" class="gauge-sublabel">Velocidad de giro</text>
+          </svg>
+        </div>
+        <div class="readout">
+          <div class="readout-item"><span>Frecuencia inducida (f)</span><strong id="gen-freq">0 Hz</strong></div>
+          <div class="readout-item"><span>Velocidad angular (ω)</span><strong id="gen-omega">0 rad/s</strong></div>
+          <div class="readout-item"><span>Voltaje estimado (ε)</span><strong id="gen-volt">0.00 V</strong></div>
+          <div class="readout-item"><span>LED</span><strong id="gen-led-status">apagado</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Calculadora 1 — Estima el voltaje de TU Generador Giratorio</h3>
+      <p>Este modelo usa una relación lineal calibrada con el dato del manual (~1.5 V a una velocidad típica de giro).
+      La constante <em>k</em> es un valor de referencia: si mides tu propio voltaje con un multímetro, ajústala en la
+      sección de <strong>Mediciones</strong> para que coincida con tu generador real.</p>
+      <div class="controls">
+        <label>Velocidad de giro (RPM)
+          <input type="range" id="gen-rpm" min="0" max="3000" step="10" value="900">
+          <output id="gen-rpm-out">900 RPM</output>
+        </label>
+        <label>Imanes en el rotor (n)
+          <input type="range" id="gen-nmag" min="2" max="8" step="1" value="4">
+          <output id="gen-nmag-out">4</output>
+        </label>
+        <label>Constante de calibración k (V por RPM)
+          <input type="range" id="gen-k" min="0.0005" max="0.006" step="0.0001" value="0.001667">
+          <output id="gen-k-out">0.001667</output>
+        </label>
+      </div>
+      <div class="formula-box small">ε ≈ k · RPM &nbsp;&nbsp;|&nbsp;&nbsp; f = (RPM / 60) · n_imanes</div>
+    </div>
+
+    <div class="card">
+      <h3>Calculadora 2 — Explora la Ley de Faraday (modelo idealizado)</h3>
+      <p>Este modelo idealiza la bobina como una espira girando en un campo uniforme. No es el voltaje exacto de tu
+      kit (la geometría real es distinta), pero muestra <strong>cómo influye cada variable</strong> en el voltaje inducido.</p>
+      <div class="controls">
+        <label>Vueltas de la bobina (N)
+          <input type="range" id="gen-N" min="50" max="1500" step="10" value="800">
+          <output id="gen-N-out">800</output>
+        </label>
+        <label>Campo magnético B (mT)
+          <input type="range" id="gen-B" min="10" max="400" step="5" value="150">
+          <output id="gen-B-out">150 mT</output>
+        </label>
+        <label>Área de la espira A (cm²)
+          <input type="range" id="gen-A" min="1" max="40" step="0.5" value="12.6">
+          <output id="gen-A-out">12.6 cm²</output>
+        </label>
+      </div>
+      <div class="formula-box small">ε_idealizado = N · B · A · ω</div>
+      <div class="result-line">Resultado idealizado: <strong id="gen-ideal-volt">0 V</strong> (a la RPM de la Calculadora 1)</div>
+    </div>
+
+    <div class="card">
+      <h3>📊 Mediciones — Tu Generador Giratorio real</h3>
+      <p>Gira el trompo, cuenta cuántos destellos del LED ves en un tiempo determinado y anota tus datos. Si tienes un
+      multímetro (modo AC mV), también puedes registrar el voltaje medido.</p>
+      <div class="controls compact">
+        <label>Duración del giro (s)<input type="number" id="gm-tiempo" step="0.1" placeholder="ej. 8.5"></label>
+        <label>Destellos contados<input type="number" id="gm-destellos" step="1" placeholder="ej. 60"></label>
+        <label>Voltaje medido (V, opcional)<input type="number" id="gm-voltaje" step="0.01" placeholder="ej. 1.4"></label>
+        <button class="btn" id="gm-add">Agregar medición</button>
+      </div>
+      <div class="table-wrap">
+        <table id="gm-table">
+          <thead><tr><th>#</th><th>Tiempo (s)</th><th>Destellos</th><th>f (Hz)</th><th>RPM estimado</th><th>Voltaje (V)</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="chart-row">
+        <canvas id="gm-chart" width="600" height="300"></canvas>
+        <div class="stats" id="gm-stats">Agrega al menos 2 mediciones con voltaje para calcular tu propia constante k.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>⚙️ Cadena de energía</h3>
+      <div class="energy-chain">
+        <div class="chain-step">Energía mecánica<br><small>(tus dedos giran el trompo)</small></div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-step">Energía cinética rotacional<br><small>KE = ½ I ω²</small></div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-step">Energía eléctrica<br><small>(inducción en la bobina)</small></div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-step">Energía luminosa<br><small>(LED) + calor perdido</small></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CALCULADORA DE LATA ============ -->
+  <section class="view" id="view-calculadora">
+    <div class="card">
+      <h2>🥫 Calculadora de Lata — Pila de Aluminio-Aire</h2>
+      <p>Dos latas de aluminio con agua salada (electrolito) y lápices de grafito (electrodos) forman una
+      <strong>pila galvánica</strong>: una reacción química que libera electrones y genera una corriente eléctrica
+      capaz de alimentar una calculadora.</p>
+      <div class="formula-box">
+        Ánodo (oxidación): Al → Al³⁺ + 3e⁻ &nbsp;&nbsp;|&nbsp;&nbsp; Cátodo (reducción): O₂ + 2H₂O + 4e⁻ → 4OH⁻
+      </div>
+      <p class="formula-note">En la superficie de la lata, el aluminio se oxida y libera electrones. En la punta del
+      lápiz (grafito), el oxígeno disuelto en el agua los captura. Los electrones viajan por el cable — esa es la
+      corriente eléctrica que enciende la calculadora.</p>
+    </div>
+
+    <div class="card">
+      <div class="diagram-row">
+        <svg id="cal-diagram" viewBox="0 0 340 240" class="diagram touch-diagram">
+          <g id="cell-1" class="draggable" data-cell="1">
+            <rect x="30" y="80" width="90" height="130" rx="8" fill="#dfe6ee" stroke="#8a8f98" stroke-width="3"/>
+            <rect id="cell1-water" x="34" y="150" width="82" height="56" fill="#5aa9d6" opacity="0.55"/>
+            <g id="cell1-bubbles"></g>
+            <line x1="75" y1="60" x2="75" y2="170" stroke="#caa06a" stroke-width="6"/>
+            <text x="75" y="228" text-anchor="middle" class="diagram-label">Lata 1 (+)</text>
+          </g>
+          <g id="cell-2" class="draggable" data-cell="2">
+            <rect x="200" y="80" width="90" height="130" rx="8" fill="#dfe6ee" stroke="#8a8f98" stroke-width="3"/>
+            <rect id="cell2-water" x="204" y="150" width="82" height="56" fill="#5aa9d6" opacity="0.55"/>
+            <g id="cell2-bubbles"></g>
+            <line x1="245" y1="60" x2="245" y2="170" stroke="#caa06a" stroke-width="6"/>
+            <text x="245" y="228" text-anchor="middle" class="diagram-label">Lata 2 (−)</text>
+          </g>
+          <line id="cal-wire" x1="120" y1="70" x2="200" y2="70" stroke="#333" stroke-width="3" stroke-dasharray="6 5"/>
+          <rect x="140" y="20" width="60" height="34" rx="4" fill="#2b2f36"/>
+          <text x="170" y="42" text-anchor="middle" fill="#8fffb0" font-size="14" id="cal-display">0</text>
+          <line x1="30" y1="55" x2="140" y2="37" stroke="#333" stroke-width="3"/>
+          <line x1="290" y1="55" x2="200" y2="37" stroke="#333" stroke-width="3"/>
+          <text x="170" y="235" text-anchor="middle" class="diagram-hint">👆 Toca las latas para agitar el agua</text>
+        </svg>
+        <div class="gauge-wrap">
+          <div class="power-bar-label">
+            <span>Energía de la pila</span>
+            <strong id="cal-bar-pct">0%</strong>
+          </div>
+          <div class="power-bar-track">
+            <div id="cal-bar-fill" class="power-bar-fill"></div>
+            <div id="cal-bar-threshold" class="power-bar-threshold"></div>
+          </div>
+          <div class="power-bar-scale"><span>Apagada</span><span>Umbral de encendido</span></div>
+        </div>
+        <div class="readout">
+          <div class="readout-item"><span>Molaridad de sal</span><strong id="cal-molaridad">0 mol/L</strong></div>
+          <div class="readout-item"><span>Resistencia interna estimada</span><strong id="cal-rint">0 Ω</strong></div>
+          <div class="readout-item"><span>Voltaje total estimado</span><strong id="cal-vtotal">0.00 V</strong></div>
+          <div class="readout-item"><span>Calculadora</span><strong id="cal-status">apagada</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Calculadora 1 — Molaridad del agua salada (matemática exacta)</h3>
+      <div class="controls">
+        <label>Sal - NaCl (g)
+          <input type="range" id="cal-gramos" min="0" max="80" step="1" value="40">
+          <output id="cal-gramos-out">40 g</output>
+        </label>
+        <label>Agua (mL)
+          <input type="range" id="cal-agua" min="100" max="800" step="10" value="400">
+          <output id="cal-agua-out">400 mL</output>
+        </label>
+      </div>
+      <div class="formula-box small">Molaridad (mol/L) = masa(g) ÷ 58.44(g/mol) ÷ volumen(L)</div>
+      <div class="result-line">Receta del kit: 40 g en 400 mL ≈ <strong>1.71 mol/L</strong></div>
+    </div>
+
+    <div class="card">
+      <h3>Calculadora 2 — Voltaje y corriente (modelo conceptual)</h3>
+      <p>El voltaje de cada celda depende principalmente de la química de los electrodos (no cambia mucho con la
+      sal), pero más sal reduce la <strong>resistencia interna</strong> y ayuda a mantener el voltaje bajo carga.
+      Este modelo es ilustrativo — compáralo con tus mediciones reales abajo.</p>
+      <div class="controls">
+        <label>Voltaje ideal por celda (V)
+          <input type="range" id="cal-vcell" min="0.3" max="1.2" step="0.05" value="0.75">
+          <output id="cal-vcell-out">0.75 V</output>
+        </label>
+        <label>Celdas en serie (latas)
+          <input type="range" id="cal-ncell" min="1" max="4" step="1" value="2">
+          <output id="cal-ncell-out">2</output>
+        </label>
+        <label>Corriente de carga de la calculadora (µA)
+          <input type="range" id="cal-iload" min="10" max="500" step="10" value="100">
+          <output id="cal-iload-out">100 µA</output>
+        </label>
+      </div>
+      <div class="formula-box small">V_total = n · V_celda &nbsp;&nbsp;|&nbsp;&nbsp; V_terminal = V_total − I·R_interna</div>
+    </div>
+
+    <div class="card">
+      <h3>📊 Mediciones — Tu Calculadora de Lata real</h3>
+      <p>Prueba distintas cantidades de sal y, si tienes un multímetro (modo DC V), registra el voltaje real entre
+      los dos cables. Anota también si la calculadora encendió.</p>
+      <div class="controls compact">
+        <label>Sal usada (g)<input type="number" id="cm-sal" step="1" placeholder="ej. 40"></label>
+        <label>Agua (mL)<input type="number" id="cm-agua" step="10" placeholder="ej. 400"></label>
+        <label>Voltaje medido (V, opcional)<input type="number" id="cm-volt" step="0.01" placeholder="ej. 1.4"></label>
+        <label>¿Encendió?
+          <select id="cm-enciende"><option value="si">Sí</option><option value="no">No</option></select>
+        </label>
+        <button class="btn" id="cm-add">Agregar medición</button>
+      </div>
+      <div class="table-wrap">
+        <table id="cm-table">
+          <thead><tr><th>#</th><th>Sal (g)</th><th>Agua (mL)</th><th>Molaridad (mol/L)</th><th>Voltaje (V)</th><th>Encendió</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="chart-row">
+        <canvas id="cm-chart" width="600" height="300"></canvas>
+        <div class="stats" id="cm-stats">Agrega mediciones con voltaje para ver la tendencia molaridad → voltaje.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMPARATIVA ============ -->
+  <section class="view" id="view-comparativa">
+    <div class="card">
+      <h2>⚖️ Dos formas de generar electricidad</h2>
+      <p>Ambos proyectos producen electricidad, pero a partir de principios físicos completamente distintos. Esta
+      comparación es útil para tu presentación o cartel del proyecto STEM.</p>
+      <div class="table-wrap">
+        <table class="compare-table">
+          <thead><tr><th></th><th>Generador Giratorio</th><th>Calculadora de Lata</th></tr></thead>
+          <tbody>
+            <tr><td>Principio físico</td><td>Inducción electromagnética (Faraday-Lenz)</td><td>Electroquímica (pila galvánica aluminio-aire)</td></tr>
+            <tr><td>Fuente de energía</td><td>Energía mecánica (movimiento del trompo)</td><td>Energía química (reacción redox del aluminio)</td></tr>
+            <tr><td>Tipo de corriente</td><td>Corriente alterna (CA)</td><td>Corriente directa (CD)</td></tr>
+            <tr><td>Variable clave</td><td>Velocidad de giro (RPM)</td><td>Concentración de sal (mol/L)</td></tr>
+            <tr><td>Ley principal</td><td>ε = −N·dΦ/dt</td><td>V = n·V_celda</td></tr>
+            <tr><td>Sale a cero cuando…</td><td>El trompo deja de girar</td><td>Se acaba el aluminio o el electrolito</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  Proyecto STEM educativo · Basado en los kits 4M Green Science: Spinning Top Generator y Tin Can Calculator
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

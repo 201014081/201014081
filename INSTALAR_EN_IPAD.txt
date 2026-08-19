@@ -1,0 +1,79 @@
+CÓMO INSTALAR "LAB STEM ENERGÍA" EN TU iPAD (SIN INTERNET, SIN LA PC)
+=======================================================================
+Este método NO depende de la computadora ni de una red Wi-Fi compartida.
+El iPad sirve la app desde sus propios archivos, usando solo Safari.
+
+
+PASO 1 — Lleva el archivo ZIP al iPad
+----------------------------------------
+Elige la forma que te sea más fácil (cualquiera funciona, es un archivo
+pequeño, menos de 1 MB):
+
+  a) Súbelo a iCloud Drive, Google Drive o Dropbox desde la PC, y ábrelo
+     desde esa misma app en el iPad.
+  b) Envíatelo por correo electrónico como adjunto y ábrelo desde el
+     Mail del iPad.
+  c) Envíatelo por WhatsApp/Mensajes (a ti mismo o a un chat) y ábrelo
+     desde ahí.
+
+Una vez que lo abras en el iPad, guárdalo en la app "Archivos"
+(por ejemplo en "En mi iPad") usando la opción "Guardar en Archivos".
+
+
+PASO 2 — Descomprime el ZIP en el iPad
+------------------------------------------
+1. Abre la app "Archivos" (Files).
+2. Busca "lab-stem-energia-ipad.zip".
+3. Tócalo una vez: iPadOS lo descomprime automáticamente y crea una
+   carpeta con el mismo nombre, con todos los archivos adentro
+   (index.html, style.css, app.js, manifest.json, icons, etc.)
+
+
+PASO 3 — Ábrelo en Safari (no en la vista previa de Archivos)
+------------------------------------------------------------------
+1. Entra a la carpeta descomprimida y toca "index.html".
+   Se abrirá una vista previa dentro de la app Archivos.
+2. Toca el ícono de Compartir (el cuadrado con la flecha hacia arriba).
+3. Elige "Abrir en Safari" (o "Open in Safari").
+   Ahora la app se abre en Safari de verdad — con esto ya puedes
+   navegar entre "Inicio", "Generador Giratorio", "Calculadora de
+   Lata" y "Comparativa" con normalidad.
+
+
+PASO 4 — Instálala en la Pantalla de Inicio
+------------------------------------------------
+1. Estando en Safari con la app abierta, toca el ícono de Compartir.
+2. Elige "Añadir a pantalla de inicio".
+3. Confirma el nombre ("Lab STEM Energía") y toca "Añadir".
+
+Aparecerá un ícono propio en tu Pantalla de Inicio. Al abrirlo desde
+ahí, la app se ve sin la barra de direcciones de Safari, como una
+aplicación instalada — y funciona sin conexión a internet ni a la PC,
+porque todos los archivos ya viven dentro del iPad.
+
+
+PASO 5 — Verifica que funciona sin internet
+------------------------------------------------
+Activa el Modo Avión y abre el ícono desde la Pantalla de Inicio.
+Todo debe seguir funcionando: las calculadoras, las animaciones y las
+tablas de mediciones (tus datos se guardan directamente en el iPad).
+
+
+NOTA SOBRE LAS MEDICIONES
+-----------------------------
+Los datos que registres en las tablas de "Mediciones" quedan guardados
+en el propio iPad (memoria de Safari), independientes de los que
+hayas registrado en la computadora. Si quieres tener un solo registro
+"oficial" de mediciones para tu proyecto, decide desde ahora en qué
+dispositivo lo vas a llevar.
+
+
+SI ALGO NO SE VE BIEN
+--------------------------
+- Si al abrir index.html los estilos o los botones no aparecen, es
+  porque se abrió en la vista previa de Archivos y no en Safari real
+  — repite el Paso 3.
+- Si borras la app de Archivos después de instalarla en la Pantalla
+  de Inicio, el ícono dejará de funcionar (necesita los archivos
+  presentes en el iPad). Puedes guardar la carpeta descomprimida en
+  cualquier lugar dentro de "En mi iPad" sin problema.
