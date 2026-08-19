@@ -5,6 +5,9 @@ function goTo(view) {
   document.getElementById("view-" + view).classList.add("active");
   document.querySelector(`.tab[data-view="${view}"]`).classList.add("active");
   window.scrollTo({ top: 0, behavior: "smooth" });
+  // Los canvas de gráficas miden 0x0 mientras su vista está en display:none;
+  // avisamos a los módulos para que los redibujen ahora que ya son visibles.
+  window.dispatchEvent(new CustomEvent("view-shown", { detail: view }));
 }
 document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => goTo(t.dataset.view)));
 document.querySelectorAll(".link-card[data-goto]").forEach((c) =>
@@ -90,6 +93,17 @@ function drawScatterChart(canvas, points, opts) {
   });
 }
 
+// CORRECCIÓN 6: Carga segura de localStorage (datos corruptos no deben tumbar el resto de app.js)
+function safeLoad(key) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(key) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.warn(`Datos corruptos en "${key}", se reinician.`, e);
+    return [];
+  }
+}
+
 // CORRECCIÓN 5: Manejo seguro de localStorage
 function safeSave(key, data) {
   try {
@@ -168,18 +182,26 @@ function safeSave(key, data) {
   let rotorAngle = 0;
   let lastTime = performance.now();
 
-  function computeAndRender() {
+  // Cálculo puro (sin tocar el DOM) — se usa en cada frame de animación.
+  function computeValues() {
     const rpmVal = parseFloat(rpm.value);
     const nmagVal = parseFloat(nmag.value);
     const kVal = parseFloat(k.value);
     const omega = (2 * Math.PI * rpmVal) / 60;
     const freq = (rpmVal / 60) * nmagVal;
     const volt = kVal * rpmVal;
+    const encendido = volt > VOLT_THRESHOLD;
+    return { rpmVal, kVal, omega, freq, volt, encendido };
+  }
+
+  // Escribe en el DOM — solo hace falta cuando el usuario mueve un control,
+  // no en cada uno de los ~60 frames/seg de la animación del trompo/LED.
+  function renderDOM() {
+    const { rpmVal, kVal, omega, freq, volt, encendido } = computeValues();
 
     freqEl.textContent = freq.toFixed(2) + " Hz";
     omegaEl.textContent = omega.toFixed(1) + " rad/s";
     voltEl.textContent = volt.toFixed(2) + " V";
-    const encendido = volt > VOLT_THRESHOLD;
     ledStatusEl.textContent = encendido ? "encendido ⚡" : "apagado";
     ledStatusEl.style.color = encendido ? "#3ddc97" : "#e05353";
 
@@ -189,15 +211,12 @@ function safeSave(key, data) {
     const Nv = parseFloat(N.value), Bv = parseFloat(B.value) / 1000, Av = parseFloat(A.value) / 10000;
     const idealVolt = Nv * Bv * Av * omega;
     idealVoltEl.textContent = idealVolt.toFixed(2) + " V";
-
-    return { freq, encendido };
   }
 
   function animate(t) {
     const dt = (t - lastTime) / 1000;
     lastTime = t;
-    const { freq, encendido } = computeAndRender();
-    const rpmVal = parseFloat(rpm.value);
+    const { freq, rpmVal, encendido } = computeValues();
     const degPerSec = (rpmVal / 60) * 360;
     rotorAngle = (rotorAngle + degPerSec * dt) % 360;
     rotor.setAttribute("transform", `rotate(${rotorAngle} 160 180)`);
@@ -215,8 +234,8 @@ function safeSave(key, data) {
     requestAnimationFrame(animate);
   }
 
-  [rpm, nmag, k, N, B, A].forEach((el) => el.addEventListener("input", computeAndRender));
-  computeAndRender();
+  [rpm, nmag, k, N, B, A].forEach((el) => el.addEventListener("input", renderDOM));
+  renderDOM();
   requestAnimationFrame(animate);
 
   // ---- Arrastra el trompo con el dedo para girarlo ----
@@ -267,7 +286,7 @@ function safeSave(key, data) {
 
   // ---- Mediciones ----
   const STORAGE_KEY = "gen_mediciones_v1";
-  let data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  let data = safeLoad(STORAGE_KEY);
   const tbody = document.querySelector("#gm-table tbody");
   const chartCanvas = document.getElementById("gm-chart");
   const statsEl = document.getElementById("gm-stats");
@@ -359,6 +378,9 @@ function safeSave(key, data) {
 
   renderTable();
   renderChart();
+  window.addEventListener("view-shown", (e) => {
+    if (e.detail === "generador") renderChart();
+  });
 })();
 
 // ===================== MÓDULO: CALCULADORA DE LATA =====================
@@ -379,12 +401,16 @@ function safeSave(key, data) {
   const wire = document.getElementById("cal-wire");
   const barFill = document.getElementById("cal-bar-fill");
   const barPct = document.getElementById("cal-bar-pct");
+  const barThreshold = document.getElementById("cal-bar-threshold");
 
   const MOLAR_MASS_NACL = 58.44;
   const V_THRESHOLD = 1.0;
   const MOL_THRESHOLD = 0.15;
   const BAR_HEADROOM = 1.3; // el 100% de la barra equivale a 1.3x el umbral, para dar margen visual
   const bubbleState = { mol: 0 };
+  // La marca del umbral se posiciona a partir de BAR_HEADROOM en vez de un
+  // porcentaje fijo en CSS, para que ambos nunca queden desincronizados.
+  barThreshold.style.left = 100 / BAR_HEADROOM + "%";
 
   function compute() {
     const g = parseFloat(gramos.value);
@@ -415,11 +441,13 @@ function safeSave(key, data) {
     water2.setAttribute("opacity", op);
 
     // ---- Barra medible: progreso de apagada → encendida ----
-    const progress = Math.min(vTerminal / V_THRESHOLD, molaridad / MOL_THRESHOLD);
-    const pctWidth = Math.max(0, Math.min(1, progress / BAR_HEADROOM)) * 100;
+    const progress = Math.max(0, Math.min(vTerminal / V_THRESHOLD, molaridad / MOL_THRESHOLD));
+    const pctWidth = Math.min(1, progress / BAR_HEADROOM) * 100;
     barFill.style.width = pctWidth + "%";
     barFill.classList.toggle("is-on", encendida);
-    barPct.textContent = Math.round(Math.max(0, progress) * 100) + "%";
+    // El texto sigue el mismo tope que el ancho de la barra, para que nunca
+    // muestren números distintos (p.ej. barra llena al 100% pero "480%").
+    barPct.textContent = (progress >= BAR_HEADROOM ? "100%+" : Math.round(pctWidth) + "%");
     barPct.style.color = encendida ? "#3ddc97" : "var(--muted)";
 
     // corriente animada por el cable cuando la pila está encendida
@@ -483,7 +511,7 @@ function safeSave(key, data) {
 
   // ---- Mediciones ----
   const STORAGE_KEY = "cal_mediciones_v1";
-  let data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  let data = safeLoad(STORAGE_KEY);
   const tbody = document.querySelector("#cm-table tbody");
   const chartCanvas = document.getElementById("cm-chart");
   const statsEl = document.getElementById("cm-stats");
@@ -568,6 +596,9 @@ function safeSave(key, data) {
 
   renderTable();
   renderChart();
+  window.addEventListener("view-shown", (e) => {
+    if (e.detail === "calculadora") renderChart();
+  });
 })();
 
 // ===================== PWA: registrar service worker =====================

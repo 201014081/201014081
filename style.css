@@ -127,7 +127,14 @@ th{color:var(--muted); font-weight:600;}
 .compare-table td:first-child{color:var(--accent-2); font-weight:600;}
 
 .chart-row{display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; margin-top:14px;}
-canvas{background:#0a1729; border:1px solid var(--border); border-radius:10px; max-width:100%;}
+canvas{
+  background:#0a1729; border:1px solid var(--border); border-radius:10px;
+  /* Tamaño de caja fijo por CSS, independiente de los atributos width/height
+     del elemento: así, si el canvas se redibuja mientras su pestaña estaba
+     oculta (y esos atributos quedan en 0), la caja visible no colapsa y el
+     próximo redibujado puede recuperar el tamaño real. */
+  width:100%; max-width:600px; height:300px;
+}
 .stats{flex:1; min-width:200px; color:var(--muted); font-size:0.85rem; line-height:1.6;}
 .stats strong{color:var(--accent);}
 
@@ -201,6 +208,8 @@ canvas{background:#0a1729; border:1px solid var(--border); border-radius:10px; m
   transition:width .25s ease;
 }
 .power-bar-threshold{
+  /* left se sobrescribe en JS a partir de BAR_HEADROOM (app.js); este valor
+     es solo el fallback visible antes de que corra el script. */
   position:absolute; top:-2px; bottom:-2px; left:76.9%;
   width:3px; background:#eaf2ef; opacity:0.9;
   box-shadow:0 0 4px #eaf2ef;

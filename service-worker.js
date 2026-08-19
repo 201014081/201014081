@@ -41,7 +41,7 @@ self.addEventListener("fetch", (event) => {
         })
         .catch(() => {
           // CORRECCIÓN 1: Fallback seguro cuando no hay cache ni red
-          if (cached) return cached;
+          // (si hubiera versión en cache ya se habría devuelto arriba, antes de intentar fetch)
           return new Response(
             "<h1>Sin conexión</h1><p>Esta aplicación necesita conexión la primera vez.</p>",
             { status: 503, headers: { "Content-Type": "text/html" } }
