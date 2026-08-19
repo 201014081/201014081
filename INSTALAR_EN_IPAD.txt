@@ -41,9 +41,24 @@ PASO 3 — Ábrelo en Safari (no en la vista previa de Archivos)
 
    Si NO te aparece la opción "Abrir en Safari" en Compartir (pasa en
    varias versiones de iPadOS, que no ofrecen Safari como destino para
-   un archivo .html suelto), usa este método alternativo — arrastrar
-   con Vista Dividida — que siempre funciona:
+   un archivo .html suelto), prueba estos dos métodos alternativos:
 
+   ALTERNATIVA A — App "Atajos" (Shortcuts) — la más confiable
+   ...............................................................
+   1. Abre la app "Atajos" (viene instalada de fábrica; si no la ves
+      en la pantalla de inicio, deslízate hacia abajo y búscala).
+   2. Toca el "+" arriba a la derecha para crear un atajo nuevo.
+   3. Toca "Añadir acción", busca "Seleccionar archivos" (o "Obtener
+      archivo") y agrégala.
+   4. Dentro de esa acción, elige el archivo y navega hasta tu carpeta
+      descomprimida → selecciona "index.html".
+   5. Toca "Añadir acción" otra vez, busca "Abrir URLs" y agrégala
+      debajo — se conecta sola con el archivo elegido arriba.
+   6. Toca el botón de reproducir (▶) abajo. Safari se abrirá
+      directamente con la app cargada.
+
+   ALTERNATIVA B — Arrastrar con Vista Dividida
+   ...............................................................
    a) Con Archivos abierto, arrastra el ícono de Safari desde el Dock
       hacia un lado de la pantalla para abrir Vista Dividida. Debes
       terminar con Archivos y Safari uno junto al otro.
@@ -89,8 +104,9 @@ SI ALGO NO SE VE BIEN
 - Si al abrir index.html los estilos o los botones no aparecen, es
   porque se abrió en la vista previa de Archivos y no en Safari real
   — repite el Paso 3.
-- Si no te aparece "Abrir en Safari" en el menú de Compartir, usa el
-  método de arrastrar con Vista Dividida descrito en el Paso 3.
+- Si no te aparece "Abrir en Safari" en el menú de Compartir, usa la
+  Alternativa A (app Atajos) o la Alternativa B (arrastrar con Vista
+  Dividida) descritas en el Paso 3.
 - Si borras la app de Archivos después de instalarla en la Pantalla
   de Inicio, el ícono dejará de funcionar (necesita los archivos
   presentes en el iPad). Puedes guardar la carpeta descomprimida en
