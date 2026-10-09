@@ -97,6 +97,8 @@ select, input[type=number], input[type=text] {
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.primary { color: #10161c; } }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .row > * { flex: 1; }
+.numw { color: var(--ink); font-size: 13px; white-space: nowrap; }
+.num { width: 76px !important; padding: 2px 6px !important; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 .readout { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
 .stat { background: var(--panel2); border-radius: 8px; padding: 8px 10px; }
 .stat span { display: block; font-size: 12px; color: var(--muted); }
@@ -156,7 +158,7 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
 <header>
   <div>
     <h1>Proyecto del Plano Inclinado</h1>
-    <div class="sub">Tiempo de descenso de un bloque con fricción cinética</div>
+    <div class="sub">Tiempo de descenso de un bloque con fricción o de una canica que rueda</div>
   </div>
   <nav id="tabs">
     <button data-v="sim" class="active">Simulación</button>
@@ -171,29 +173,58 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
 
 <div class="layout">
   <aside>
+    <h2>Ejemplos listos</h2>
+    <div class="ctrl">
+      <select id="preset"></select>
+    </div>
+    <div class="hr"></div>
+    <h2>Objeto que baja</h2>
+    <div class="ctrl">
+      <select id="obj">
+        <option value="bloque">Bloque (desliza con fricción)</option>
+        <option value="canica">Canica o esfera maciza (rueda)</option>
+        <option value="cilindro">Cilindro macizo (rueda)</option>
+        <option value="hueca">Pelota hueca (rueda)</option>
+      </select>
+    </div>
+    <div class="ctrl">
+      <label>Tamaño (lado o diámetro) <span class="numw"><input class="num" id="nsize" type="number" step="0.1" min="0.5" max="20"> cm</span></label>
+      <input type="range" id="size" min="0.5" max="15" step="0.1">
+    </div>
+    <div class="ctrl">
+      <label>Masa m <span class="numw"><input class="num" id="nm" type="number" step="0.1" min="0.5" max="5000"> g</span></label>
+      <input type="range" id="m" min="0" max="3.3" step="0.01">
+      <div class="note" id="oMkg"></div>
+    </div>
+    <div class="hr"></div>
     <h2>Parámetros del montaje</h2>
     <div class="ctrl">
-      <label>Ángulo θ <b id="oTheta"></b></label>
-      <input type="range" id="theta" min="10" max="60" step="0.5">
+      <label>Ángulo θ <span class="numw"><input class="num" id="ntheta" type="number" step="0.5" min="1" max="80"> °</span></label>
+      <input type="range" id="theta" min="5" max="60" step="0.5">
     </div>
     <div class="ctrl">
-      <label>Material (μₖ de tabla)</label>
-      <select id="material"></select>
+      <label>Altura de salida h <span class="numw"><input class="num" id="nh" type="number" step="0.5" min="1" max="150"> cm</span></label>
+      <input type="range" id="h" min="1" max="120" step="0.5">
     </div>
     <div class="ctrl">
-      <label>Coef. de fricción μₖ <b id="oMu"></b></label>
-      <input type="range" id="mu" min="0" max="0.9" step="0.01">
+      <label>Distancia sobre el plano L <span class="numw"><input class="num" id="nL" type="number" step="0.5" min="2" max="300"> cm</span></label>
+      <input type="range" id="L" min="2" max="200" step="0.5">
+    </div>
+    <div class="chk" style="margin:-4px 0 10px">
+      <label><input type="checkbox" id="fixH" checked> Mantener la altura al cambiar el ángulo</label>
+    </div>
+    <div id="frictionCtrls">
+      <div class="ctrl">
+        <label>Material (μₖ de tabla)</label>
+        <select id="material"></select>
+      </div>
+      <div class="ctrl">
+        <label>Coef. de fricción μₖ <span class="numw"><input class="num" id="nmu" type="number" step="0.01" min="0" max="1.5"></span></label>
+        <input type="range" id="mu" min="0" max="1" step="0.01">
+      </div>
     </div>
     <div class="ctrl">
-      <label>Distancia L <b id="oL"></b></label>
-      <input type="range" id="L" min="0.4" max="2" step="0.05">
-    </div>
-    <div class="ctrl">
-      <label>Masa m <b id="oM"></b></label>
-      <input type="range" id="m" min="0.05" max="2" step="0.05">
-    </div>
-    <div class="ctrl">
-      <label>Gravedad g <b id="oG"></b></label>
+      <label>Gravedad g <span class="numw"><input class="num" id="ng" type="number" step="0.01" min="9.7" max="9.9"> m/s²</span></label>
       <input type="range" id="g" min="9.70" max="9.90" step="0.01">
     </div>
     <button class="btn" id="btnReset" style="width:100%">Restaurar valores del proyecto</button>
@@ -201,7 +232,7 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
     <div class="hr"></div>
     <h2>Reproducción</h2>
     <div class="row">
-      <button class="btn primary" id="btnPlay">▶ Soltar bloque</button>
+      <button class="btn primary" id="btnPlay">▶ Soltar</button>
       <button class="btn" id="btnStop">⟲ Reiniciar</button>
     </div>
     <div class="ctrl" style="margin-top:10px">
@@ -236,14 +267,14 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
           <div class="chk" style="flex:0 0 auto">
             <label><input type="checkbox" id="cVec" checked> Fuerzas</label>
             <label><input type="checkbox" id="cComp"> Componentes del peso</label>
-            <label><input type="checkbox" id="cGhost" checked> Estela cada 0.1 s</label>
+            <label><input type="checkbox" id="cGhost" checked> <span id="ghostLbl">Estela cada 0.1 s</span></label>
             <label><input type="checkbox" id="cVel"> Vector velocidad</label>
           </div>
         </div>
         <canvas id="cvSim" style="height:480px"></canvas>
         <div id="simMsg" style="margin-top:8px"></div>
-        <p class="note">La estela muestra la posición del bloque cada 0.1 s. Observa que la separación entre copias crece:
-          eso es la aceleración constante. En cada intervalo igual de tiempo el bloque recorre más distancia que en el anterior.</p>
+        <p class="note">La estela muestra la posición del objeto a intervalos iguales de tiempo. Observa que la separación entre copias crece:
+          eso es la aceleración constante. En cada intervalo igual de tiempo el objeto recorre más distancia que en el anterior.</p>
       </div>
       <div class="grid3">
         <div class="card"><h2>Posición x(t)</h2><canvas id="cvX" style="height:220px"></canvas>
@@ -251,7 +282,7 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
         <div class="card"><h2>Velocidad v(t)</h2><canvas id="cvV" style="height:220px"></canvas>
           <p class="note">Recta: v = a·t (la pendiente es a)</p></div>
         <div class="card"><h2>Aceleración a(t)</h2><canvas id="cvA" style="height:220px"></canvas>
-          <p class="note">Constante: a = g(sen θ − μₖ cos θ)</p></div>
+          <p class="note" id="aNote">Constante: a = g(sen θ − μₖ cos θ)</p></div>
       </div>
     </section>
 
@@ -264,14 +295,14 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
           <div class="legend" style="margin-top:6px">
             <span><i style="background:var(--weight)"></i>Peso mg</span>
             <span><i style="background:var(--normal)"></i>Normal N</span>
-            <span><i style="background:var(--friction)"></i>Fricción fₖ</span>
+            <span><i style="background:var(--friction)"></i>Fricción</span>
             <span><i style="background:var(--comp)"></i>Componentes del peso</span>
           </div>
         </div>
         <div class="card">
           <h2>Valor de cada fuerza</h2>
           <table id="tblF"></table>
-          <h3>¿El bloque desliza?</h3>
+          <h3 id="tanTitle">¿El bloque desliza?</h3>
           <canvas id="cvTan" style="height:120px"></canvas>
           <div id="tanMsg" style="margin-top:6px"></div>
           <h3>Ecuaciones con tus valores</h3>
@@ -294,7 +325,7 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
         <div class="legend" style="margin-top:6px">
           <span><i style="background:var(--s1)"></i>Potencial Eₚ</span>
           <span><i style="background:var(--s3)"></i>Cinética E꜀</span>
-          <span><i style="background:var(--s2)"></i>Calor por fricción Q</span>
+          <span><i style="background:var(--s2)"></i><span id="legE3">Calor por fricción Q</span></span>
         </div>
         <div id="eqE" style="margin-top:10px"></div>
       </div>
@@ -310,10 +341,9 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
           <p class="note">La curva gruesa usa tu μₖ actual. El punto marca tu ángulo. Zona sombreada: rango permitido 30° a 50°.</p>
         </div>
         <div class="card">
-          <h2>Tiempo de descenso vs μₖ (a tu ángulo)</h2>
+          <h2 id="sensMuTitle">Tiempo de descenso vs μₖ (a tu ángulo)</h2>
           <canvas id="cvSensMu" style="height:320px"></canvas>
-          <p class="note">Si el μₖ real de tu madera es distinto al de la tabla, aquí ves cuánto cambia el tiempo.
-            La banda sombreada es ±25 % alrededor del tiempo teórico.</p>
+          <p class="note" id="sensMuNote"></p>
         </div>
       </div>
       <div class="card">
@@ -356,9 +386,10 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
             <div class="stat"><span>Teórico</span><b id="sTeo">-</b></div>
             <div class="stat big"><span>Error %</span><b id="sErr">-</b></div>
             <div class="stat big"><span>Nota (Fig. 4)</span><b id="sNota">-</b></div>
-            <div class="stat"><span>μₖ experimental</span><b id="sMuExp">-</b></div>
+            <div class="stat"><span id="sMuLbl">μₖ experimental</span><b id="sMuExp">-</b></div>
           </div>
           <div id="regMsg" style="margin-top:10px"></div>
+          <button class="btn" id="btnUseMu" style="width:100%; display:none">Usar el μₖ medido en la simulación</button>
           <h3>Ensayos vs valor teórico</h3>
           <canvas id="cvTrials" style="height:230px"></canvas>
           <h3>Escala de calificación por error</h3>
@@ -391,6 +422,8 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
             <li><b>Ángulo mayor = más rápido.</b> Crece sen θ (lo que empuja) y baja cos θ (lo que frena).</li>
             <li><b>Más fricción = más lento.</b> μₖ grande reduce la aceleración.</li>
             <li><b>¿Por qué L = 1.00 m?</b> Un recorrido largo aumenta el tiempo y así el error del cronómetro (0.1 a 0.2 s) pesa menos en porcentaje.</li>
+            <li><b>Bloque contra canica:</b> el bloque se arrastra y la fricción le quita energía (calor). La canica rueda: la fricción solo la hace girar, por eso su tiempo no depende de μₖ (a = 5/7·g sen θ).</li>
+            <li><b>Distancias cortas:</b> el tiempo crece con √L. Con 25 cm tarda la mitad que con 1 m. Mientras más corto, más importa tu tiempo de reacción: mejor medir con vídeo.</li>
             <li><b>Fricción estática:</b> para arrancar hay que vencer μₛ (mayor que μₖ). Si el bloque no arranca, dale un toque mínimo o aumenta el ángulo.</li>
           </ul>
           <h3>Coeficientes de fricción cinética (Serway y Jewett, Tabla 5.1)</h3>
@@ -408,7 +441,7 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
 "use strict";
 
 /* ---------- Datos del proyecto ---------- */
-const PROYECTO = { theta: 35, mu: 0.20, L: 1.00, m: 0.25, g: 9.81 };
+const PROYECTO = { theta: 35, mu: 0.20, L: 1.00, m: 0.25, g: 9.81, obj: "bloque", size: 0.08 };
 const MATERIALES = [
   ["Madera sobre madera", 0.20],
   ["Vidrio sobre vidrio", 0.40],
@@ -417,6 +450,27 @@ const MATERIALES = [
   ["Teflón sobre teflón", 0.04],
   ["Hule sobre concreto seco", 0.80]
 ];
+// μₖ de vidrio sobre madera obtenido de la prueba en vídeo: 30°, h = 50 cm, t ≈ 2 s
+const MU_PRUEBA = +((9.81 * Math.sin(Math.PI / 6) - 2 * 1.0 / 4) / (9.81 * Math.cos(Math.PI / 6))).toFixed(3);
+MATERIALES.push(["Vidrio sobre madera (tu prueba en vídeo)", MU_PRUEBA]);
+const PRESETS = [
+  ["Proyecto original: bloque de madera, 35°, L = 1.00 m", PROYECTO],
+  ["Mi prueba: bloque de vidrio 2×2 cm, 30°, altura 50 cm (t ≈ 2 s)",
+    { theta: 30, L: 1.00, mu: MU_PRUEBA, m: 0.010, obj: "bloque", size: 0.02 }],
+  ["Canica de vidrio (5 g, 1.6 cm), 30°, altura 50 cm",
+    { theta: 30, L: 1.00, m: 0.005, obj: "canica", size: 0.016 }],
+  ["Bloquecito de madera (3 cm, 15 g), 30°, altura 25 cm",
+    { theta: 30, L: 0.50, mu: 0.20, m: 0.015, obj: "bloque", size: 0.03 }],
+  ["Canica en rampa corta: 20°, L = 30 cm",
+    { theta: 20, L: 0.30, m: 0.005, obj: "canica", size: 0.016 }]
+];
+// Objetos que ruedan sin deslizar: k = I / (m r²)
+const OBJETOS = {
+  bloque:   { nombre: "bloque", rueda: false, k: 0 },
+  canica:   { nombre: "canica", rueda: true, k: 2 / 5, txt: "esfera maciza, I = ⅖ m r²" },
+  cilindro: { nombre: "cilindro", rueda: true, k: 1 / 2, txt: "cilindro macizo, I = ½ m r²" },
+  hueca:    { nombre: "pelota", rueda: true, k: 2 / 3, txt: "esfera hueca, I = ⅔ m r²" }
+};
 const S = Object.assign({}, PROYECTO);
 const sim = { t: 0, playing: false, last: 0 };
 
@@ -424,14 +478,30 @@ const $ = id => document.getElementById(id);
 const rad = d => d * Math.PI / 180;
 const fmt = (v, n = 3) => Number.isFinite(v) ? v.toFixed(n) : "-";
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const OB = () => OBJETOS[S.obj];
+const H = () => S.L * Math.sin(rad(S.theta));
+// Formatos con unidades adaptadas a valores pequeños
+const fLen = v => !Number.isFinite(v) ? "-" : Math.abs(v) < 1 ? (v * 100).toFixed(1) + " cm" : v.toFixed(2) + " m";
+const fMass = v => v < 1 ? +(v * 1000).toFixed(1) + " g" : v.toFixed(2) + " kg";
+const fF = v => !Number.isFinite(v) ? "-" : Math.abs(v) < 0.1 ? (v * 1000).toFixed(1) + " mN" : v.toFixed(3) + " N";
+const fE = v => !Number.isFinite(v) ? "-" : Math.abs(v) < 0.1 ? (v * 1000).toFixed(1) + " mJ" : v.toFixed(3) + " J";
 
 /* ---------- Física ---------- */
-function accel(theta = S.theta, mu = S.mu, g = S.g) {
+// Bloque: a = g(sen θ − μₖ cos θ).  Objeto que rueda: a = g sen θ / (1 + k)
+function accel(theta = S.theta, mu = S.mu, g = S.g, obj = S.obj) {
+  const o = OBJETOS[obj];
+  if (o.rueda) return g * Math.sin(rad(theta)) / (1 + o.k);
   return g * (Math.sin(rad(theta)) - mu * Math.cos(rad(theta)));
 }
-function tDesc(theta = S.theta, mu = S.mu, L = S.L, g = S.g) {
-  const a = accel(theta, mu, g);
+function tDesc(theta = S.theta, mu = S.mu, L = S.L, g = S.g, obj = S.obj) {
+  const a = accel(theta, mu, g, obj);
   return a > 0 ? Math.sqrt(2 * L / a) : Infinity;
+}
+// Fuerza de fricción que actúa: cinética en el bloque, estática en lo que rueda
+function friccion(m = S.m) {
+  const th = rad(S.theta), o = OB();
+  if (o.rueda) return m * S.g * Math.sin(th) * o.k / (1 + o.k);
+  return accel() > 0 ? S.mu * m * S.g * Math.cos(th) : NaN;
 }
 function stateAt(t) {
   const a = Math.max(0, accel());
@@ -555,23 +625,26 @@ function chart(cv, o) {
 }
 
 /* ---------- Simulación principal ---------- */
+function ghostStep(T) { return T <= 1.2 ? 0.1 : niceStep(T, 8); }
 function drawSim() {
   const cv = $("cvSim");
   const { ctx, w, h } = setup(cv);
-  const th = rad(S.theta), a = accel(), T = tDesc();
+  const th = rad(S.theta), a = accel(), T = tDesc(), o = OB();
   const st = stateAt(sim.t);
-  let blk = 0.11 * S.L + 0.04;            // tamaño del bloque (m), solo visual
-  let Ltot = S.L + blk;                    // largo dibujado del plano
-  const sc0 = Math.min((w - 300) / (Ltot * Math.cos(th)), (h - 110) / (Ltot * Math.sin(th) + blk));
-  blk = Math.min(blk, 56 / sc0); Ltot = S.L + blk;
-  const sc = Math.min((w - 300) / (Ltot * Math.cos(th)), (h - 110) / (Ltot * Math.sin(th) + blk));
+  // tamaño visual del objeto: el real, pero entre 16 y 56 px para que siempre se vea
+  const fit = (L, b) => Math.min((w - 300) / (L * Math.cos(th)), (h - 110) / (L * Math.sin(th) + b));
+  const sc0 = fit(S.L + S.size, S.size);
+  let blk = Math.min(Math.max(S.size * sc0, 16), 56) / sc0;
+  let Ltot = S.L + blk;
+  const sc = fit(Ltot, blk);
   const run = Ltot * Math.cos(th) * sc, rise = Ltot * Math.sin(th) * sc;
-  const x0 = (w - run) / 2 - 30, yb = h - 34;         // esquina inferior izquierda
+  const x0 = (w - run) / 2 - 10, yb = h - 34;         // esquina inferior izquierda
   const top = { x: x0, y: yb - rise };              // punto alto (izquierda)
   const bot = { x: x0 + run, y: yb };               // punto bajo (derecha)
   const ux = Math.cos(th), uy = Math.sin(th);       // dirección pendiente abajo (pantalla)
   const nx = Math.sin(th), ny = -Math.cos(th);      // normal hacia fuera
   const P = d => ({ x: top.x + d * sc * ux, y: top.y + d * sc * uy });
+  const bp = blk * sc;
 
   // suelo
   ctx.strokeStyle = css("--muted"); ctx.lineWidth = 1.5;
@@ -591,62 +664,87 @@ function drawSim() {
   ctx.strokeStyle = css("--ink"); ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.arc(bot.x, bot.y, 54, Math.PI, Math.PI + th); ctx.stroke();
   label(ctx, "θ = " + S.theta.toFixed(1) + "°", bot.x - 62 - 50 * Math.cos(th / 2), bot.y - 16 - 20 * Math.sin(th / 2), css("--ink"), { size: 15, bold: true, align: "right" });
+  // altura de salida (desde la base del objeto en la salida hasta el suelo)
+  const ps = P(blk);
+  ctx.strokeStyle = css("--muted"); ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(ps.x, ps.y); ctx.lineTo(x0 - 26, ps.y); ctx.stroke(); ctx.setLineDash([]);
+  arrow(ctx, x0 - 20, (ps.y + yb) / 2, x0 - 20, ps.y, css("--muted"), 1.2);
+  arrow(ctx, x0 - 20, (ps.y + yb) / 2, x0 - 20, yb, css("--muted"), 1.2);
+  label(ctx, "h = " + fLen(H()), x0 - 28, (ps.y + yb) / 2, css("--muted"), { size: 13, align: "right", halo: true });
   // marcas de salida y llegada
   const mark = (d, txt) => {
     const p = P(d);
     ctx.strokeStyle = css("--bad"); ctx.lineWidth = 2; ctx.setLineDash([4, 3]);
-    ctx.beginPath(); ctx.moveTo(p.x - nx * 6, p.y - ny * 6); ctx.lineTo(p.x + nx * (blk * sc + 22), p.y + ny * (blk * sc + 22)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(p.x - nx * 6, p.y - ny * 6); ctx.lineTo(p.x + nx * (bp + 22), p.y + ny * (bp + 22)); ctx.stroke();
     ctx.setLineDash([]);
-    label(ctx, txt, p.x + nx * (blk * sc + 30), p.y + ny * (blk * sc + 30), css("--bad"), { size: 12, bold: true, align: "center", halo: true });
+    label(ctx, txt, p.x + nx * (bp + 30), p.y + ny * (bp + 30), css("--bad"), { size: 12, bold: true, align: "center", halo: true });
   };
   mark(blk, "Salida");
   mark(Ltot, "Llegada");
   // cota L
-  const pa = P(blk), pb = P(Ltot);
-  const ca = { x: pa.x - nx * 18, y: pa.y - ny * 18 }, cb = { x: pb.x - nx * 18, y: pb.y - ny * 18 };
+  const pb = P(Ltot);
+  const ca = { x: ps.x - nx * 18, y: ps.y - ny * 18 }, cb = { x: pb.x - nx * 18, y: pb.y - ny * 18 };
   arrow(ctx, (ca.x + cb.x) / 2, (ca.y + cb.y) / 2, ca.x, ca.y, css("--muted"), 1.2);
   arrow(ctx, (ca.x + cb.x) / 2, (ca.y + cb.y) / 2, cb.x, cb.y, css("--muted"), 1.2);
   ctx.save(); ctx.translate((ca.x + cb.x) / 2 - nx * 14, (ca.y + cb.y) / 2 - ny * 14); ctx.rotate(th);
-  label(ctx, "L = " + S.L.toFixed(2) + " m", 0, 0, css("--muted"), { size: 13, align: "center", halo: true });
+  label(ctx, "L = " + fLen(S.L), 0, 0, css("--muted"), { size: 13, align: "center", halo: true });
   ctx.restore();
 
-  const drawBlock = (d, alpha, stroke) => {
+  // objeto: bloque (cuadrado) o canica/cilindro/pelota (círculo que gira)
+  const drawObj = (d, alpha, ghost) => {
     const p = P(d);
     ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(th); ctx.globalAlpha = alpha;
-    ctx.fillStyle = css("--block"); ctx.fillRect(0, -blk * sc, blk * sc, blk * sc);
-    if (stroke) { ctx.strokeStyle = css("--ink"); ctx.lineWidth = 1.5; ctx.strokeRect(0, -blk * sc, blk * sc, blk * sc); }
+    if (!o.rueda) {
+      ctx.fillStyle = css("--block"); if (!ghost) ctx.fillRect(0, -bp, bp, bp);
+      ctx.strokeStyle = ghost ? css("--block") : css("--ink"); ctx.lineWidth = ghost ? 1 : 1.5;
+      if (ghost) ctx.setLineDash([3, 3]);
+      ctx.strokeRect(0, -bp, bp, bp);
+    } else {
+      const r = bp / 2;
+      ctx.translate(r, -r);
+      if (!ghost) {
+        const gr = ctx.createRadialGradient(-r * 0.35, -r * 0.35, r * 0.1, 0, 0, r);
+        gr.addColorStop(0, "#ffffff"); gr.addColorStop(0.35, css("--block")); gr.addColorStop(1, css("--ink"));
+        ctx.fillStyle = gr;
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, 2 * Math.PI); ctx.fill();
+        ctx.rotate(d / (S.size / 2));            // ángulo girado = distancia / radio real
+        ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(r * 0.85, 0); ctx.stroke();
+      } else {
+        ctx.strokeStyle = css("--block"); ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, 2 * Math.PI); ctx.stroke();
+      }
+    }
     ctx.restore();
   };
   // estela
-  if ($("cGhost").checked) {
-    if (a > 0 && Number.isFinite(T)) {
-      const dt = T > 2 ? T / 10 : 0.1;
-      for (let k = 0, tt = 0; tt <= st.t + 1e-9; k++, tt = k * dt) {
-        const x = 0.5 * a * tt * tt;
-        drawBlock(x, 0.10, false);
-        const g0 = P(x); ctx.save(); ctx.translate(g0.x, g0.y); ctx.rotate(th); ctx.strokeStyle = css("--block");
-        ctx.globalAlpha = 0.55; ctx.setLineDash([3, 3]); ctx.lineWidth = 1; ctx.strokeRect(0, -blk * sc, blk * sc, blk * sc); ctx.restore();
-        const p = P(x + blk);
-        ctx.strokeStyle = css("--accent"); ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - nx * 8, p.y - ny * 8); ctx.stroke();
-        if (k > 0) label(ctx, (tt).toFixed(1), p.x - nx * 30, p.y - ny * 30, css("--accent"), { size: 11, align: "center" });
-      }
+  const dt = Number.isFinite(T) ? ghostStep(T) : 0.1;
+  $("ghostLbl").textContent = "Estela cada " + +dt.toFixed(2) + " s";
+  if ($("cGhost").checked && a > 0 && Number.isFinite(T)) {
+    for (let k = 0, tt = 0; tt <= st.t + 1e-9; k++, tt = k * dt) {
+      const x = 0.5 * a * tt * tt;
+      drawObj(x, 0.6, true);
+      const p = P(x + blk);
+      ctx.strokeStyle = css("--accent"); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + nx * (bp + 4), p.y + ny * (bp + 4)); ctx.stroke();
+      if (k > 0) label(ctx, String(+tt.toFixed(2)), p.x + nx * (bp + 12), p.y + ny * (bp + 12), css("--accent"), { size: 11, align: "center", halo: true });
     }
   }
-  // bloque
-  drawBlock(st.x, 1, true);
-  const c = P(st.x + blk / 2); const cx = c.x + nx * blk * sc / 2, cy = c.y + ny * blk * sc / 2;
-  // fuerzas
-  const Fs = 95 / (S.g);  // px por (N/kg): fuerzas normalizadas por masa
+  drawObj(st.x, 1, false);
+  const c = P(st.x + blk / 2); const cx = c.x + nx * bp / 2, cy = c.y + ny * bp / 2;
+  // fuerzas (dibujadas por unidad de masa, así no cambian de tamaño con m)
+  const Fs = 95 / S.g;
   if ($("cVec").checked) {
-    const W = S.g * Fs, Nn = S.g * Math.cos(th) * Fs, f = S.mu * S.g * Math.cos(th) * Fs;
+    const W = S.g * Fs, Nn = S.g * Math.cos(th) * Fs, f = friccion(1) * Fs;
     arrow(ctx, cx, cy, cx, cy + W, css("--weight"));
     label(ctx, "mg", cx + 8, cy + W - 4, css("--weight"), { bold: true, halo: true });
     arrow(ctx, cx, cy, cx + nx * Nn, cy + ny * Nn, css("--normal"));
     label(ctx, "N", cx + nx * Nn + 8, cy + ny * Nn - 6, css("--normal"), { bold: true, halo: true });
-    if (a > 0 || st.v > 0) {
-      arrow(ctx, cx, cy, cx - ux * f, cy - uy * f, css("--friction"));
-      label(ctx, "fₖ", cx - ux * f - 8, cy - uy * f - 10, css("--friction"), { bold: true, halo: true, align: "right" });
+    if (Number.isFinite(f) && f > 0) {
+      // en lo que rueda, la fricción estática actúa en el punto de contacto
+      const fx = o.rueda ? cx - nx * bp / 2 : cx, fy = o.rueda ? cy - ny * bp / 2 : cy;
+      arrow(ctx, fx, fy, fx - ux * f, fy - uy * f, css("--friction"));
+      label(ctx, o.rueda ? "fₛ" : "fₖ", fx - ux * f - 8, fy - uy * f - 10, css("--friction"), { bold: true, halo: true, align: "right" });
     }
   }
   if ($("cComp").checked) {
@@ -666,14 +764,21 @@ function drawSim() {
   ctx.beginPath(); ctx.roundRect ? ctx.roundRect(w - 200, 12, 186, 66, 10) : ctx.rect(w - 200, 12, 186, 66); ctx.fill(); ctx.stroke();
   label(ctx, "Cronómetro", w - 188, 28, css("--muted"), { size: 12 });
   label(ctx, st.t.toFixed(3) + " s", w - 188, 56, css("--ink"), { size: 26, bold: true });
+  label(ctx, (o.rueda ? o.nombre[0].toUpperCase() + o.nombre.slice(1) + " " : "Bloque ") + "de " + fLen(S.size) + ", " + fMass(S.m), w - 188, 94, css("--muted"), { size: 13 });
   if (Number.isFinite(T) && st.t >= T - 1e-9 && sim.t > 0) {
     label(ctx, "¡Llegó!  t = " + T.toFixed(3) + " s,  v = " + st.v.toFixed(2) + " m/s", 20, 24, css("--ok"), { size: 15, bold: true });
   }
   const msg = $("simMsg");
   if (a <= 0) {
     msg.innerHTML = `<div class="alert bad">El bloque <b>no desliza</b>: tan ${S.theta.toFixed(1)}° = ${Math.tan(th).toFixed(3)} ≤ μₖ = ${S.mu.toFixed(2)}. Aumenta el ángulo por encima de ${(Math.atan(S.mu) * 180 / Math.PI).toFixed(1)}° o usa un material con menos fricción.</div>`;
-  } else if (S.theta < 30 || S.theta > 50 || S.L < 0.4) {
-    msg.innerHTML = `<div class="alert warn">Fuera de las reglas del proyecto (ángulo de 30° a 50° y recorrido de al menos 40 cm).</div>`;
+  } else if (o.rueda) {
+    msg.innerHTML = `<div class="alert ok">La ${o.nombre} <b>rueda sin deslizar</b> (${o.txt}): a = g·sen θ / (1 + ${+o.k.toFixed(3)}). El tiempo no depende de la masa, del tamaño ni del μₖ.
+      Rueda sin resbalar mientras μₛ ≥ ${(o.k * Math.tan(th) / (1 + o.k)).toFixed(2)}.</div>`;
+  } else if (Math.tan(th) < S.mu * 1.25) {
+    const t2 = tDesc(S.theta, S.mu + 0.03), t3 = tDesc(S.theta + 5);
+    msg.innerHTML = `<div class="alert warn"><b>Cerca del límite:</b> tan ${S.theta}° = ${Math.tan(th).toFixed(3)} apenas supera μₖ = ${S.mu.toFixed(3)}, así que la fricción casi equilibra al peso.
+      Aquí el tiempo es muy sensible: si μₖ sube solo 0.03, el tiempo pasa de ${fmt(T, 2)} s a ${Number.isFinite(t2) ? t2.toFixed(2) + " s" : "no bajar"}.
+      Con 5° más (${S.theta + 5}°) tardaría ${fmt(t3, 2)} s y tus mediciones serían más estables.</div>`;
   } else msg.innerHTML = "";
 }
 
@@ -686,10 +791,11 @@ function drawKinematics() {
     xs.push([t, 0.5 * a * t * t]); vs.push([t, a * t]); as.push([t, a]);
   }
   const ink = css("--ink"), vl = [{ x: st.t, color: css("--muted") }];
+  $("aNote").textContent = OB().rueda ? "Constante: a = g sen θ / (1 + k)" : "Constante: a = g(sen θ − μₖ cos θ)";
   const tStep = Tm <= 1 ? 0.1 : Tm <= 2 ? 0.25 : undefined;
   chart($("cvX"), { xMin: 0, xMax: Tm, yMin: 0, yMax: S.L * 1.1, xLabel: "t (s)", yLabel: "x (m)", xStep: tStep,
     series: [{ pts: xs, color: css("--s1"), width: 2.5 }], vLines: vl,
-    points: [{ x: st.t, y: st.x, color: css("--s1"), label: st.x.toFixed(3) + " m", align: st.t > Tm * 0.6 ? "right" : "left", dx: st.t > Tm * 0.6 ? -9 : 9 }] });
+    points: [{ x: st.t, y: st.x, color: css("--s1"), label: fLen(st.x), align: st.t > Tm * 0.6 ? "right" : "left", dx: st.t > Tm * 0.6 ? -9 : 9 }] });
   const vmax = Math.max(a * Tm, 0.1);
   chart($("cvV"), { xMin: 0, xMax: Tm, yMin: 0, yMax: vmax * 1.12, xLabel: "t (s)", yLabel: "v (m/s)", xStep: tStep,
     series: [{ pts: vs, color: css("--s3"), width: 2.5 }], vLines: vl,
@@ -702,11 +808,12 @@ function drawKinematics() {
 /* ---------- Fuerzas ---------- */
 function drawForces() {
   const cv = $("cvDCL"); const { ctx, w, h } = setup(cv);
-  const th = rad(S.theta), mg = S.m * S.g, N = mg * Math.cos(th), f = S.mu * N;
-  const Wp = mg * Math.sin(th), net = Wp - f, a = accel();
+  const o = OB(), th = rad(S.theta), mg = S.m * S.g, N = mg * Math.cos(th), f = friccion();
+  const Wp = mg * Math.sin(th), a = accel(), net = a > 0 ? Wp - f : 0;
   const cx = w / 2, cy = h / 2 - 10;
   const ux = Math.cos(th), uy = Math.sin(th), nx = Math.sin(th), ny = -Math.cos(th);
   const sc = Math.min(w, h) * 0.36 / mg;
+  const fs = o.rueda ? "fₛ" : "fₖ";
   // superficie del plano
   ctx.strokeStyle = css("--wood-edge"); ctx.lineWidth = 3;
   const bs = 70;
@@ -719,69 +826,87 @@ function drawForces() {
   ctx.setLineDash([]);
   label(ctx, "+x", cx + ux * 200, cy + uy * 200, css("--muted"), { size: 12 });
   label(ctx, "+y", cx + nx * 180, cy + ny * 180, css("--muted"), { size: 12 });
-  // bloque
-  ctx.save(); ctx.translate(cx, cy); ctx.rotate(th);
-  ctx.fillStyle = css("--block"); ctx.globalAlpha = 0.9; ctx.fillRect(-bs / 2, -bs / 2, bs, bs); ctx.restore();
+  // objeto
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(th); ctx.fillStyle = css("--block"); ctx.globalAlpha = 0.9;
+  if (o.rueda) { ctx.beginPath(); ctx.arc(0, 0, bs / 2, 0, 2 * Math.PI); ctx.fill(); }
+  else ctx.fillRect(-bs / 2, -bs / 2, bs, bs);
+  ctx.restore();
   // vectores
   arrow(ctx, cx, cy, cx + ux * Wp * sc, cy + uy * Wp * sc, css("--comp"), 2.5, [6, 4]);
   arrow(ctx, cx, cy, cx - nx * N * sc, cy - ny * N * sc, css("--comp"), 2.5, [6, 4]);
   arrow(ctx, cx, cy, cx, cy + mg * sc, css("--weight"), 3.5);
   arrow(ctx, cx, cy, cx + nx * N * sc, cy + ny * N * sc, css("--normal"), 3.5);
-  if (a > 0) arrow(ctx, cx, cy, cx - ux * f * sc, cy - uy * f * sc, css("--friction"), 3.5);
-  label(ctx, "mg = " + mg.toFixed(2) + " N", cx + 8, cy + mg * sc + 4, css("--weight"), { bold: true, halo: true });
-  label(ctx, "N = " + N.toFixed(2) + " N", cx + nx * N * sc + 8, cy + ny * N * sc - 8, css("--normal"), { bold: true, halo: true });
-  if (a > 0) label(ctx, "fₖ = " + f.toFixed(2) + " N", cx - ux * f * sc - 8, cy - uy * f * sc - 12, css("--friction"), { bold: true, halo: true, align: "right" });
-  label(ctx, "mg sen θ = " + Wp.toFixed(2) + " N", cx + ux * Wp * sc + 8, cy + uy * Wp * sc + 14, css("--comp"), { bold: true, halo: true });
+  const fx = o.rueda ? sx : cx, fy = o.rueda ? sy : cy;
+  if (f > 0) arrow(ctx, fx, fy, fx - ux * f * sc, fy - uy * f * sc, css("--friction"), 3.5);
+  label(ctx, "mg = " + fF(mg), cx + 8, cy + mg * sc + 4, css("--weight"), { bold: true, halo: true });
+  label(ctx, "N = " + fF(N), cx + nx * N * sc + 8, cy + ny * N * sc - 8, css("--normal"), { bold: true, halo: true });
+  if (f > 0) label(ctx, fs + " = " + fF(f), fx - ux * f * sc - 8, fy - uy * f * sc - 12, css("--friction"), { bold: true, halo: true, align: "right" });
+  label(ctx, "mg sen θ = " + fF(Wp), cx + ux * Wp * sc + 8, cy + uy * Wp * sc + 14, css("--comp"), { bold: true, halo: true });
   label(ctx, "mg cos θ", cx - nx * N * sc - 8, cy - ny * N * sc + 12, css("--comp"), { bold: true, halo: true, align: "right" });
-  // fuerza neta
   if (a > 0) {
     const yb = h - 26;
-    label(ctx, "Fuerza neta = mg sen θ − fₖ = " + net.toFixed(2) + " N", w / 2, yb - 20, css("--ink"), { bold: true, align: "center", halo: true });
-    label(ctx, "a = F neta / m = " + net.toFixed(2) + " / " + S.m.toFixed(2) + " = " + a.toFixed(3) + " m/s²", w / 2, yb, css("--accent"), { bold: true, align: "center", halo: true });
+    label(ctx, "Fuerza neta = mg sen θ − " + fs + " = " + fF(net), w / 2, yb - 20, css("--ink"), { bold: true, align: "center", halo: true });
+    label(ctx, "a = F neta / m = " + fF(net) + " / " + fMass(S.m) + " = " + a.toFixed(3) + " m/s²", w / 2, yb, css("--accent"), { bold: true, align: "center", halo: true });
   }
 
   const rows = [
     ["Peso", "mg", mg, "--weight"],
     ["Normal", "mg cos θ", N, "--normal"],
-    ["Fricción cinética", "μₖ·N", a > 0 ? f : NaN, "--friction"],
+    o.rueda ? ["Fricción estática (hace girar)", "k/(1+k)·mg sen θ", f, "--friction"] : ["Fricción cinética", "μₖ·N", f, "--friction"],
     ["Componente paralela", "mg sen θ", Wp, "--comp"],
-    ["Fuerza neta (eje x)", "mg sen θ − μₖN", a > 0 ? net : 0, "--accent"]
+    ["Fuerza neta (eje x)", "mg sen θ − " + fs, net, "--accent"]
   ];
-  $("tblF").innerHTML = "<tr><th>Fuerza</th><th>Fórmula</th><th>Valor (N)</th><th style='width:40%'>Tamaño</th></tr>" +
-    rows.map(r => `<tr><td style="text-align:left"><b style="color:var(${r[3]})">■</b> ${r[0]}</td><td>${r[1]}</td><td>${fmt(r[2], 3)}</td>
+  $("tblF").innerHTML = "<tr><th>Fuerza</th><th>Fórmula</th><th>Valor</th><th style='width:36%'>Tamaño</th></tr>" +
+    rows.map(r => `<tr><td style="text-align:left"><b style="color:var(${r[3]})">■</b> ${r[0]}</td><td>${r[1]}</td><td>${fF(r[2])}</td>
       <td><div style="height:10px;border-radius:5px;background:var(${r[3]});width:${Math.max(0, (r[2] || 0) / mg * 100)}%"></div></td></tr>`).join("");
 
-  // indicador tan θ vs μk
+  // indicador tan θ vs μ (para la canica: μₛ mínimo para rodar sin resbalar)
+  const lim = o.rueda ? o.k * Math.tan(th) / (1 + o.k) : S.mu;
   const c2 = setup($("cvTan")), ct = c2.ctx;
-  const tan = Math.tan(th), maxv = Math.max(1.2, tan * 1.1, S.mu * 1.1);
+  const tan = Math.tan(th), maxv = Math.max(1.2, tan * 1.1, lim * 1.1);
   const L0 = 20, W0 = c2.w - 40, Xv = v => L0 + v / maxv * W0;
-  ct.fillStyle = css("--bad-soft"); ct.fillRect(L0, 34, Xv(S.mu) - L0, 30);
-  ct.fillStyle = css("--ok-soft"); ct.fillRect(Xv(S.mu), 34, L0 + W0 - Xv(S.mu), 30);
-  label(ct, "no desliza", (L0 + Xv(S.mu)) / 2, 49, css("--bad"), { size: 12, align: "center" });
-  label(ct, "desliza", (Xv(S.mu) + L0 + W0) / 2, 49, css("--ok"), { size: 12, align: "center" });
-  ct.strokeStyle = css("--friction"); ct.lineWidth = 3;
-  ct.beginPath(); ct.moveTo(Xv(S.mu), 26); ct.lineTo(Xv(S.mu), 72); ct.stroke();
-  label(ct, "μₖ = " + S.mu.toFixed(2), Xv(S.mu), 16, css("--friction"), { bold: true, align: "center" });
-  ct.fillStyle = css("--ink"); ct.beginPath(); ct.moveTo(Xv(tan), 66); ct.lineTo(Xv(tan) - 8, 82); ct.lineTo(Xv(tan) + 8, 82); ct.fill();
-  label(ct, "tan θ = " + tan.toFixed(3), Xv(tan), 98, css("--ink"), { bold: true, align: "center" });
+  if (!o.rueda) {
+    ct.fillStyle = css("--bad-soft"); ct.fillRect(L0, 34, Xv(S.mu) - L0, 30);
+    ct.fillStyle = css("--ok-soft"); ct.fillRect(Xv(S.mu), 34, L0 + W0 - Xv(S.mu), 30);
+    label(ct, "no desliza", (L0 + Xv(S.mu)) / 2, 49, css("--bad"), { size: 12, align: "center" });
+    label(ct, "desliza", (Xv(S.mu) + L0 + W0) / 2, 49, css("--ok"), { size: 12, align: "center" });
+    ct.strokeStyle = css("--friction"); ct.lineWidth = 3;
+    ct.beginPath(); ct.moveTo(Xv(S.mu), 26); ct.lineTo(Xv(S.mu), 72); ct.stroke();
+    label(ct, "μₖ = " + S.mu.toFixed(2), Xv(S.mu), 16, css("--friction"), { bold: true, align: "center" });
+    ct.fillStyle = css("--ink"); ct.beginPath(); ct.moveTo(Xv(tan), 66); ct.lineTo(Xv(tan) - 8, 82); ct.lineTo(Xv(tan) + 8, 82); ct.fill();
+    label(ct, "tan θ = " + tan.toFixed(3), Xv(tan), 98, css("--ink"), { bold: true, align: "center" });
+  } else {
+    ct.fillStyle = css("--ok-soft"); ct.fillRect(L0, 34, W0, 30);
+    label(ct, "rueda en cualquier ángulo (si la superficie no es resbalosa)", L0 + W0 / 2, 49, css("--ok"), { size: 12, align: "center" });
+  }
+  $("tanTitle").textContent = o.rueda ? "¿Rueda o resbala?" : "¿El bloque desliza?";
   const thc = Math.atan(S.mu) * 180 / Math.PI;
-  $("tanMsg").innerHTML = tan > S.mu
+  $("tanMsg").innerHTML = o.rueda
+    ? `<div class="alert ok">La ${o.nombre} rueda: no se arrastra, así que la fricción no le quita energía. Solo necesita μₛ ≥ ${lim.toFixed(2)} para no resbalar (madera y vidrio cumplen de sobra).</div>`
+    : tan > S.mu
     ? `<div class="alert ok">Sí desliza: tan θ = ${tan.toFixed(3)} &gt; μₖ = ${S.mu.toFixed(2)}. Ángulo mínimo para deslizar: ${thc.toFixed(1)}°.</div>`
     : `<div class="alert bad">No desliza: tan θ = ${tan.toFixed(3)} ≤ μₖ = ${S.mu.toFixed(2)}. Necesitas más de ${thc.toFixed(1)}°.</div>`;
 
   $("eqF").innerHTML = `
-    <div class="eq">Eje y: ΣF<sub>y</sub> = N − mg cos θ = 0 ⟹ N = ${S.m.toFixed(2)}·${S.g.toFixed(2)}·cos ${S.theta}° = <span class="r">${N.toFixed(3)} N</span></div>
-    <div class="eq">Eje x: ΣF<sub>x</sub> = mg sen θ − μₖN = ma</div>
-    <div class="eq">a = g(sen θ − μₖ cos θ) = ${S.g.toFixed(2)}(${Math.sin(th).toFixed(4)} − ${S.mu.toFixed(2)}·${Math.cos(th).toFixed(4)}) = <span class="r">${fmt(a, 3)} m/s²</span></div>
-    <p class="note">Cambia la masa en el panel: todas las fuerzas cambian, pero la aceleración no. La masa se cancela.</p>`;
+    <div class="eq">Eje y: ΣF<sub>y</sub> = N − mg cos θ = 0 ⟹ N = ${S.m.toFixed(3)} kg · ${S.g.toFixed(2)} · cos ${S.theta}° = <span class="r">${fF(N)}</span></div>` +
+    (o.rueda
+    ? `<div class="eq">Traslación: mg sen θ − fₛ = ma;  Rotación: fₛ·r = I·α = k·m·r²·(a/r)</div>
+       <div class="eq">a = g sen θ / (1 + k) = ${S.g.toFixed(2)} · ${Math.sin(th).toFixed(4)} / ${(1 + o.k).toFixed(3)} = <span class="r">${fmt(a, 3)} m/s²</span></div>`
+    : `<div class="eq">Eje x: ΣF<sub>x</sub> = mg sen θ − μₖN = ma</div>
+       <div class="eq">a = g(sen θ − μₖ cos θ) = ${S.g.toFixed(2)}(${Math.sin(th).toFixed(4)} − ${S.mu.toFixed(2)}·${Math.cos(th).toFixed(4)}) = <span class="r">${fmt(a, 3)} m/s²</span></div>`) +
+    `<p class="note">Cambia la masa en el panel: todas las fuerzas cambian, pero la aceleración no. La masa se cancela, por eso una canica de 5 g y una de 50 g tardan lo mismo.</p>`;
 }
 
 /* ---------- Energía ---------- */
 function drawEnergy() {
-  const th = rad(S.theta), a = Math.max(0, accel()), st = stateAt(sim.t);
-  const h0 = S.L * Math.sin(th), E0 = S.m * S.g * h0, fk = S.mu * S.m * S.g * Math.cos(th);
-  const Ep = S.m * S.g * (S.L - st.x) * Math.sin(th), Ek = 0.5 * S.m * st.v * st.v, Q = fk * st.x;
-  // barras
+  const o = OB(), th = rad(S.theta), a = Math.max(0, accel()), st = stateAt(sim.t);
+  const h0 = H(), E0 = S.m * S.g * h0, fk = o.rueda ? 0 : S.mu * S.m * S.g * Math.cos(th);
+  const Ep = S.m * S.g * (S.L - st.x) * Math.sin(th), Ek = 0.5 * S.m * st.v * st.v;
+  // Para lo que rueda, la tercera parte es energía de rotación ½Iω² = k·½mv²; para el bloque, calor
+  const third = x => o.rueda ? o.k * S.m * a * x : fk * x;
+  const Q = third(st.x);
+  const tercero = o.rueda ? "Rotación ½Iω²" : "Calor por fricción Q";
+  $("legE3").textContent = tercero;
   const { ctx, w, h } = setup($("cvEbar"));
   const top = 30, bot = h - 40, bw = Math.min(110, w * 0.22);
   const Yp = v => bot - v / (E0 || 1) * (bot - top);
@@ -792,80 +917,107 @@ function drawEnergy() {
     parts.forEach(([v, c]) => {
       if (v <= 0) return;
       ctx.fillStyle = css(c); ctx.fillRect(x, Yp(base + v), bw, Yp(base) - Yp(base + v));
-      if (Yp(base) - Yp(base + v) > 16) label(ctx, v.toFixed(3) + " J", x + bw / 2, (Yp(base) + Yp(base + v)) / 2, "#fff", { size: 12, bold: true, align: "center" });
+      if (Yp(base) - Yp(base + v) > 16) label(ctx, fE(v), x + bw / 2, (Yp(base) + Yp(base + v)) / 2, "#fff", { size: 12, bold: true, align: "center" });
       base += v;
     });
     ctx.strokeStyle = css("--ink"); ctx.lineWidth = 1; ctx.strokeRect(x, Yp(E0), bw, bot - Yp(E0));
     label(ctx, name, x + bw / 2, bot + 18, css("--ink"), { bold: true, align: "center" });
-    label(ctx, "Total " + (parts.reduce((s, p) => s + p[0], 0)).toFixed(3) + " J", x + bw / 2, Yp(E0) - 12, css("--muted"), { size: 12, align: "center" });
+    label(ctx, "Total " + fE(parts.reduce((s, p) => s + p[0], 0)), x + bw / 2, Yp(E0) - 12, css("--muted"), { size: 12, align: "center" });
   });
   label(ctx, "t = " + st.t.toFixed(3) + " s", w - 10, 14, css("--muted"), { size: 12, align: "right" });
-  // curvas vs x
-  const N = 60, P = [], K = [], H = [];
+  // curvas vs x, en mJ si la energía es pequeña
+  const u = E0 < 0.1 ? 1000 : 1, uLbl = u > 1 ? "mJ" : "J";
+  const N = 60, P = [], K = [], Hc = [];
   for (let i = 0; i <= N; i++) {
     const x = S.L * i / N;
-    P.push([x, S.m * S.g * (S.L - x) * Math.sin(th)]);
-    K.push([x, a > 0 ? S.m * a * x : 0]);
-    H.push([x, fk * x]);
+    P.push([x, u * S.m * S.g * (S.L - x) * Math.sin(th)]);
+    K.push([x, u * S.m * a * x]);
+    Hc.push([x, u * third(x)]);
   }
-  chart($("cvE"), { xMin: 0, xMax: S.L, yMin: 0, yMax: E0 * 1.1, xLabel: "x recorrido (m)", yLabel: "Energía (J)",
-    series: [{ pts: P, color: css("--s1"), width: 2.5 }, { pts: K, color: css("--s3"), width: 2.5 }, { pts: H, color: css("--s2"), width: 2.5 }],
-    hLines: [{ y: E0, color: css("--muted"), label: "Energía total" }], vLines: [{ x: st.x, color: css("--muted") }],
-    points: [{ x: st.x, y: Ep, color: css("--s1") }, { x: st.x, y: Ek, color: css("--s3") }, { x: st.x, y: Q, color: css("--s2") }] });
-  const pct = a > 0 ? (S.m * a * S.L) / E0 * 100 : 0;
-  $("eqE").innerHTML = `
-    <div class="eq">mgh₀ = ½mv² + fₖ·L ⟹ ${E0.toFixed(3)} J = ${(a > 0 ? S.m * a * S.L : 0).toFixed(3)} J + ${(a > 0 ? fk * S.L : 0).toFixed(3)} J</div>
-    <p class="note">Altura inicial h₀ = L·sen θ = ${h0.toFixed(3)} m. Al llegar abajo, el <b>${pct.toFixed(0)} %</b> de la energía se convirtió en movimiento
-    y el <b>${(100 - pct).toFixed(0)} %</b> en calor por fricción. Con la energía también se obtiene la velocidad final:
-    v = √(2aL) = ${fmt(Math.sqrt(2 * a * S.L), 2)} m/s.</p>`;
+  chart($("cvE"), { xMin: 0, xMax: S.L, yMin: 0, yMax: u * E0 * 1.1, xLabel: "x recorrido (m)", yLabel: "Energía (" + uLbl + ")",
+    series: [{ pts: P, color: css("--s1"), width: 2.5 }, { pts: K, color: css("--s3"), width: 2.5 }, { pts: Hc, color: css("--s2"), width: 2.5 }],
+    hLines: [{ y: u * E0, color: css("--muted"), label: "Energía total" }], vLines: [{ x: st.x, color: css("--muted") }],
+    points: [{ x: st.x, y: u * Ep, color: css("--s1") }, { x: st.x, y: u * Ek, color: css("--s3") }, { x: st.x, y: u * Q, color: css("--s2") }] });
+  const Kf = S.m * a * S.L, pct = E0 > 0 ? Kf / E0 * 100 : 0;
+  $("eqE").innerHTML = (o.rueda
+    ? `<div class="eq">mgh₀ = ½mv² + ½Iω² ⟹ ${fE(E0)} = ${fE(Kf)} + ${fE(third(S.L))}</div>`
+    : `<div class="eq">mgh₀ = ½mv² + fₖ·L ⟹ ${fE(E0)} = ${fE(a > 0 ? Kf : 0)} + ${fE(a > 0 ? fk * S.L : 0)}</div>`) +
+    `<p class="note">Altura inicial h₀ = L·sen θ = ${fLen(h0)}. Al llegar abajo, el <b>${pct.toFixed(0)} %</b> de la energía es movimiento hacia adelante
+    y el <b>${(100 - pct).toFixed(0)} %</b> ${o.rueda ? "es giro (no se pierde, la " + o.nombre + " sigue girando)" : "se convirtió en calor por fricción"}.
+    Velocidad final: v = √(2aL) = ${fmt(Math.sqrt(2 * a * S.L), 2)} m/s.</p>`;
 }
 
 /* ---------- Sensibilidad ---------- */
 function drawSens() {
-  const T0 = tDesc();
-  const mus = [0.10, 0.15, 0.20, 0.25, 0.30];
+  const T0 = tDesc(), o = OB();
   const pal = ["--s4", "--s1", "--s3", "--s2", "--s5"];
-  const series = mus.map((mu, i) => {
-    const pts = [];
-    for (let th = 15; th <= 60; th += 0.5) { const t = tDesc(th, mu); pts.push([th, t < 3 ? t : NaN]); }
-    return { pts, color: css(pal[i]), width: 1.5, dash: [5, 4] };
-  });
-  const cur = []; for (let th = 15; th <= 60; th += 0.5) { const t = tDesc(th, S.mu); cur.push([th, t < 3 ? t : NaN]); }
-  series.push({ pts: cur, color: css("--ink"), width: 3 });
-  const yMax = Math.min(3, Math.max(1.2, (Number.isFinite(T0) ? T0 : 1) * 1.6)) * Math.sqrt(S.L);
-  chart($("cvSensT"), { xMin: 15, xMax: 60, yMin: 0, yMax: Math.max(yMax, 1.2), xLabel: "Ángulo θ (°)", yLabel: "t (s)", xUnit: "°",
+  const yTop = Math.max(1.2, Number.isFinite(T0) ? T0 * 1.8 : 2);
+  const curve = fn => { const pts = []; for (let th = 10; th <= 60; th += 0.5) { const t = fn(th); pts.push([th, t < yTop * 1.05 ? t : NaN]); } return pts; };
+  // curvas de comparación: μₖ alrededor del actual (bloque) u otros objetos (lo que rueda)
+  const muBase = Math.round(S.mu * 20) / 20;
+  const mus = [-0.10, -0.05, 0, 0.05, 0.10].map(d => +(muBase + d).toFixed(2)).filter(m => m >= 0);
+  let series, leg;
+  if (!o.rueda) {
+    series = mus.map((mu, i) => ({ pts: curve(th => tDesc(th, mu)), color: css(pal[i]), width: 1.5, dash: [5, 4] }));
+    leg = mus.map((mu, i) => `<span><i style="background:var(${pal[i]})"></i>μₖ = ${mu.toFixed(2)}</span>`).join("") +
+      `<span><i style="background:var(--ink);height:5px"></i>Actual (μₖ = ${S.mu.toFixed(2)})</span>`;
+  } else {
+    const objs = [["bloque", "Bloque (μₖ = " + S.mu.toFixed(2) + ")"], ["canica", "Canica"], ["cilindro", "Cilindro"], ["hueca", "Pelota hueca"]];
+    series = objs.map(([k], i) => ({ pts: curve(th => tDesc(th, S.mu, S.L, S.g, k)), color: css(pal[i]), width: 1.5, dash: [5, 4] }));
+    leg = objs.map(([, n], i) => `<span><i style="background:var(${pal[i]})"></i>${n}</span>`).join("") +
+      `<span><i style="background:var(--ink);height:5px"></i>Actual</span>`;
+  }
+  series.push({ pts: curve(th => tDesc(th)), color: css("--ink"), width: 3 });
+  chart($("cvSensT"), { xMin: 10, xMax: 60, yMin: 0, yMax: yTop, xLabel: "Ángulo θ (°)", yLabel: "t (s)", xUnit: "°",
     xBands: [{ x0: 30, x1: 50, color: css("--accent"), alpha: 0.10 }], series,
     points: [{ x: S.theta, y: T0, color: css("--ink"), label: fmt(T0, 3) + " s" }] });
-  $("legSens").innerHTML = mus.map((mu, i) => `<span><i style="background:var(${pal[i]})"></i>μₖ = ${mu.toFixed(2)}</span>`).join("") +
-    `<span><i style="background:var(--ink);height:5px"></i>μₖ actual = ${S.mu.toFixed(2)}</span>`;
+  $("legSens").innerHTML = leg;
 
-  const pm = []; for (let mu = 0; mu <= 0.6001; mu += 0.005) { const t = tDesc(S.theta, mu); pm.push([mu, t < 4 ? t : NaN]); }
+  // segunda gráfica: t vs μₖ (bloque) o t vs distancia L (lo que rueda)
   const bands = Number.isFinite(T0) ? [{ y0: T0 * 0.75, y1: T0 * 1.25, color: css("--ok"), alpha: 0.15 }] : [];
-  chart($("cvSensMu"), { xMin: 0, xMax: 0.6, yMin: 0, yMax: Number.isFinite(T0) ? Math.max(T0 * 2, 1) : 2, xLabel: "Coeficiente μₖ", yLabel: "t (s)",
-    yBands: bands, series: [{ pts: pm, color: css("--s1"), width: 3 }],
-    vLines: [{ x: Math.tan(rad(S.theta)), color: css("--bad") }],
-    points: [{ x: S.mu, y: T0, color: css("--ink"), label: fmt(T0, 3) + " s" }] });
+  if (!o.rueda) {
+    $("sensMuTitle").textContent = "Tiempo de descenso vs μₖ (a tu ángulo)";
+    $("sensMuNote").textContent = "Si el μₖ real es distinto al de la tabla, aquí ves cuánto cambia el tiempo. La banda sombreada es ±25 % alrededor del tiempo teórico. La línea roja es el μₖ con el que el bloque ya no baja.";
+    const muMax = Math.max(0.6, Math.min(1, S.mu * 1.6));
+    const pm = []; for (let mu = 0; mu <= muMax + 1e-9; mu += 0.005) { const t = tDesc(S.theta, mu); pm.push([mu, t < 8 ? t : NaN]); }
+    chart($("cvSensMu"), { xMin: 0, xMax: muMax, yMin: 0, yMax: Number.isFinite(T0) ? Math.max(T0 * 2, 1) : 2, xLabel: "Coeficiente μₖ", yLabel: "t (s)",
+      yBands: bands, series: [{ pts: pm, color: css("--s1"), width: 3 }],
+      vLines: [{ x: Math.tan(rad(S.theta)), color: css("--bad") }],
+      points: [{ x: S.mu, y: T0, color: css("--ink"), label: fmt(T0, 3) + " s" }] });
+  } else {
+    $("sensMuTitle").textContent = "Tiempo de descenso vs distancia L (a tu ángulo)";
+    $("sensMuNote").textContent = "Con distancias cortas el tiempo baja mucho (crece con la raíz de L). Con menos de 1 s, tu tiempo de reacción pesa más en el error: graba en vídeo y mide cuadro por cuadro.";
+    const Lm = Math.max(1, S.L * 1.5), pl = [];
+    for (let L = 0; L <= Lm + 1e-9; L += Lm / 80) pl.push([L, tDesc(S.theta, S.mu, L)]);
+    chart($("cvSensMu"), { xMin: 0, xMax: Lm, yMin: 0, yMax: tDesc(S.theta, S.mu, Lm) * 1.15, xLabel: "Distancia L (m)", yLabel: "t (s)",
+      yBands: bands, series: [{ pts: pl, color: css("--s1"), width: 3 }],
+      points: [{ x: S.L, y: T0, color: css("--ink"), label: fmt(T0, 3) + " s" }] });
+  }
 
-  const ths = [30, 35, 40, 45, 50], mt = [0.15, 0.20, 0.25, 0.30];
+  const ths = [30, 35, 40, 45, 50];
+  const cols = o.rueda
+    ? [["bloque", "Bloque μₖ " + S.mu.toFixed(2)], ["canica", "Canica"], ["cilindro", "Cilindro"], ["hueca", "Pelota hueca"]].map(([k, n]) => ({ n, f: th => tDesc(th, S.mu, S.L, S.g, k), cur: k === S.obj }))
+    : mus.slice(0, 5).map(m => ({ n: "μₖ = " + m.toFixed(2), f: th => tDesc(th, m), cur: Math.abs(m - muBase) < 1e-9 }));
   const nearT = ths.reduce((b, v) => Math.abs(v - S.theta) < Math.abs(b - S.theta) ? v : b);
-  const nearM = mt.reduce((b, v) => Math.abs(v - S.mu) < Math.abs(b - S.mu) ? v : b);
-  let html = "<tr><th>θ</th>" + mt.map(m => `<th>μₖ = ${m.toFixed(2)}</th>`).join("") + "</tr>";
+  let html = "<tr><th>θ</th>" + cols.map(c => `<th>${c.n}</th>`).join("") + "</tr>";
   ths.forEach(th => {
-    html += `<tr><th>${th}°</th>` + mt.map(m => {
-      const t = tDesc(th, m);
-      const d = Number.isFinite(T0) ? (t - T0) / T0 : 0;
+    html += `<tr><th>${th}°</th>` + cols.map(c => {
+      const t = c.f(th);
+      const d = Number.isFinite(T0) && Number.isFinite(t) ? (t - T0) / T0 : 0;
       const col = d > 0 ? "--s2" : "--s1";
       const alpha = Math.min(0.55, Math.abs(d) * 1.4);
-      const cls = th === nearT && Math.abs(m - nearM) < 1e-9 ? "cur" : "";
-      return `<td class="${cls}" style="background:color-mix(in srgb, var(${col}) ${Math.round(alpha * 100)}%, transparent)">${fmt(t, 3)} s</td>`;
+      const cls = th === nearT && c.cur ? "cur" : "";
+      return `<td class="${cls}" style="background:color-mix(in srgb, var(${col}) ${Math.round(alpha * 100)}%, transparent)">${Number.isFinite(t) ? t.toFixed(3) + " s" : "no baja"}</td>`;
     }).join("") + "</tr>";
   });
   $("tblSens").innerHTML = html;
-  $("sensL").textContent = S.L.toFixed(2) + " m";
-  const t30 = tDesc(S.theta, 0.30);
-  $("sensMsg").innerHTML = Number.isFinite(T0) && Number.isFinite(t30)
-    ? `<p class="alert warn">Con θ = ${S.theta}°, si el μₖ real fuera 0.30 en lugar de ${S.mu.toFixed(2)}, el tiempo pasaría de ${T0.toFixed(3)} s a ${t30.toFixed(3)} s
-       (${((t30 - T0) / T0 * 100).toFixed(1)} % de diferencia). El margen aceptable es ±25 %.</p>` : "";
+  $("sensL").textContent = fLen(S.L);
+  const muAlt = +(S.mu + 0.10).toFixed(2), tAlt = tDesc(S.theta, muAlt);
+  $("sensMsg").innerHTML = o.rueda
+    ? `<p class="alert warn">La ${o.nombre} no depende de μₖ: con θ = ${S.theta}° y L = ${fLen(S.L)} tarda ${fmt(T0, 3)} s. Un bloque con μₖ = ${S.mu.toFixed(2)} tardaría ${fmt(tDesc(S.theta, S.mu, S.L, S.g, "bloque"), 3)} s.</p>`
+    : Number.isFinite(T0) && Number.isFinite(tAlt)
+    ? `<p class="alert warn">Con θ = ${S.theta}°, si el μₖ real fuera ${muAlt.toFixed(2)} en lugar de ${S.mu.toFixed(2)}, el tiempo pasaría de ${T0.toFixed(3)} s a ${tAlt.toFixed(3)} s
+       (${((tAlt - T0) / T0 * 100).toFixed(1)} % de diferencia). El margen aceptable es ±25 %.</p>` : "";
 }
 
 /* ---------- Registro experimental ---------- */
@@ -902,14 +1054,21 @@ function drawRegistro() {
   $("sDesv").textContent = s ? "± " + s.desv.toFixed(3) + " s" : "-";
   $("sErr").textContent = s && Number.isFinite(s.err) ? s.err.toFixed(1) + " %" : "-";
   $("sNota").textContent = s && s.nota ? s.nota : "-";
-  $("sMuExp").textContent = s ? s.muexp.toFixed(3) : "-";
+  const o = OB();
+  $("sMuLbl").textContent = o.rueda ? "a medida" : "μₖ experimental";
+  $("sMuExp").textContent = !s ? "-" : o.rueda ? s.aexp.toFixed(3) + " m/s²" : s.muexp.toFixed(3);
+  $("btnUseMu").style.display = s && !o.rueda && s.muexp > 0 && Math.abs(s.muexp - S.mu) > 0.005 ? "block" : "none";
   let msg = "";
   if (s) {
     msg += s.err <= 25
       ? `<div class="alert ok">Error de ${s.err.toFixed(1)} %: dentro de la zona aceptable (±25 %).</div>`
       : `<div class="alert bad">Error de ${s.err.toFixed(1)} %: fuera de la zona aceptable (±25 %). Revisa el ángulo, la limpieza de las superficies y la forma de cronometrar.</div>`;
-    msg += `<p class="note">Con tu promedio, la aceleración real fue a = 2L/t² = ${s.aexp.toFixed(3)} m/s², lo que equivale a un
-      μₖ real de ${s.muexp.toFixed(3)} (tabla: ${S.mu.toFixed(2)}).${s.n < 5 ? " Recuerda hacer al menos 5 mediciones." : ""}</p>`;
+    msg += o.rueda
+      ? `<p class="note">Con tu promedio, la aceleración real fue a = 2L/t² = ${s.aexp.toFixed(3)} m/s² (teórica para la ${o.nombre}: ${accel().toFixed(3)} m/s²).
+        Si sale menor, puede deberse a que la tabla no es lisa, a la resistencia a la rodadura o a que la ${o.nombre} resbaló.${s.n < 5 ? " Recuerda hacer al menos 5 mediciones." : ""}</p>`
+      : `<p class="note">Con tu promedio, la aceleración real fue a = 2L/t² = 2 × ${S.L.toFixed(3)} / ${s.prom.toFixed(3)}² = ${s.aexp.toFixed(3)} m/s², lo que equivale a un
+        μₖ real de ${s.muexp.toFixed(3)}:  μₖ = (g sen θ − a) / (g cos θ). (Valor actual en la simulación: ${S.mu.toFixed(3)}.)${s.n < 5 ? " Recuerda hacer al menos 5 mediciones." : ""}</p>`;
+    if (s.prom < 1) msg += `<p class="note">Tiempos menores de 1 s: tu reacción (0.1 a 0.2 s) puede ser más del 10 % del tiempo. Mide sobre el vídeo en cámara lenta.</p>`;
   } else msg = `<p class="note">Aún no hay mediciones. Escribe tus tiempos o usa el cronómetro.</p>`;
   $("regMsg").innerHTML = msg;
   const n = Math.max(trials.length, 5);
@@ -936,15 +1095,25 @@ function swToggle() {
 /* ---------- Teoría ---------- */
 function drawTeoria() {
   const th = rad(S.theta), a = accel(), T = tDesc();
+  const o = OB();
   const pasos = [
-    ["Se mide el montaje", `Ángulo θ = ${S.theta}° (transportador o app), distancia L = ${S.L.toFixed(2)} m (cinta métrica). El bloque parte del reposo (v₀ = 0).`],
-    ["Se dibujan las fuerzas", `Peso mg (hacia abajo), normal N (perpendicular al plano) y fricción cinética fₖ (contra el movimiento). Se usan ejes x paralelo al plano e y perpendicular.`],
+    ["Se mide el montaje", `Ángulo θ = ${S.theta}° (transportador o app) y altura de salida h = ${fLen(H())}. La distancia sobre el plano es
+      L = h / sen θ = ${fLen(H())} / ${Math.sin(th).toFixed(4)} = ${fLen(S.L)}. El objeto (${o.rueda ? o.nombre : "bloque"} de ${fLen(S.size)}, ${fMass(S.m)}) parte del reposo (v₀ = 0).`],
+    ["Se dibujan las fuerzas", o.rueda
+      ? `Peso mg, normal N y una fricción <b>estática</b> fₛ en el punto de contacto. Esa fricción no frena por arrastre: es la que hace girar la ${o.nombre}.`
+      : `Peso mg (hacia abajo), normal N (perpendicular al plano) y fricción cinética fₖ (contra el movimiento). Se usan ejes x paralelo al plano e y perpendicular.`],
     ["Eje perpendicular: no hay movimiento", `<div class="eq">N − mg cos θ = 0 ⟹ N = mg cos θ</div>`],
-    ["Eje paralelo: segunda ley de Newton", `<div class="eq">mg sen θ − μₖ mg cos θ = ma ⟹ <span class="r">a = g(sen θ − μₖ cos θ)</span></div>`],
-    ["Se sustituyen los números", `<div class="eq">a = ${S.g.toFixed(2)} (sen ${S.theta}° − ${S.mu.toFixed(2)} cos ${S.theta}°) = ${S.g.toFixed(2)} (${Math.sin(th).toFixed(4)} − ${(S.mu * Math.cos(th)).toFixed(4)}) = <span class="r">${fmt(a, 3)} m/s²</span></div>`],
-    ["Cinemática con aceleración constante", `<div class="eq">L = ½ a t² ⟹ t = √(2L / a) = √(2 × ${S.L.toFixed(2)} / ${fmt(a, 3)}) = <span class="r">${fmt(T, 3)} s</span></div>`],
+    o.rueda
+      ? ["Traslación y rotación", `<div class="eq">mg sen θ − fₛ = ma  y  fₛ·r = I·α, con I = k·m·r² y α = a/r ⟹ <span class="r">a = g sen θ / (1 + k)</span></div>
+         Para la ${o.nombre}: k = ${+o.k.toFixed(3)} (${o.txt}). Ni la masa ni el radio aparecen.`]
+      : ["Eje paralelo: segunda ley de Newton", `<div class="eq">mg sen θ − μₖ mg cos θ = ma ⟹ <span class="r">a = g(sen θ − μₖ cos θ)</span></div>`],
+    ["Se sustituyen los números", o.rueda
+      ? `<div class="eq">a = ${S.g.toFixed(2)} × sen ${S.theta}° / ${(1 + o.k).toFixed(3)} = ${S.g.toFixed(2)} × ${Math.sin(th).toFixed(4)} / ${(1 + o.k).toFixed(3)} = <span class="r">${fmt(a, 3)} m/s²</span></div>`
+      : `<div class="eq">a = ${S.g.toFixed(2)} (sen ${S.theta}° − ${S.mu.toFixed(2)} cos ${S.theta}°) = ${S.g.toFixed(2)} (${Math.sin(th).toFixed(4)} − ${(S.mu * Math.cos(th)).toFixed(4)}) = <span class="r">${fmt(a, 3)} m/s²</span></div>`],
+    ["Cinemática con aceleración constante", `<div class="eq">L = ½ a t² ⟹ t = √(2L / a) = √(2 × ${S.L.toFixed(3)} / ${fmt(a, 3)}) = <span class="r">${fmt(T, 3)} s</span></div>`],
     ["Velocidad final", `<div class="eq">v = a·t = ${fmt(a, 3)} × ${fmt(T, 3)} = <span class="r">${fmt(a * T, 2)} m/s</span></div>`],
-    ["Se mide en la práctica y se compara", `Mínimo 5 mediciones del tiempo, se promedian y se calcula el error: <div class="eq">Error (%) = |t<sub>teórico</sub> − t<sub>experimental</sub>| / t<sub>experimental</sub> × 100</div> Ve a la pestaña <b>Registro experimental</b>.`]
+    ["Se mide en la práctica y se compara", `Mínimo 5 mediciones del tiempo, se promedian y se calcula el error: <div class="eq">Error (%) = |t<sub>teórico</sub> − t<sub>experimental</sub>| / t<sub>experimental</sub> × 100</div>
+      Al revés, con el tiempo medido se obtiene el μₖ real: a = 2L/t² y μₖ = (g sen θ − a)/(g cos θ). Ve a la pestaña <b>Registro experimental</b>.`]
   ];
   $("pasos").innerHTML = pasos.map(p => `<li><b>${p[0]}.</b> ${p[1]}</li>`).join("");
   // montaje esquemático
@@ -956,14 +1125,14 @@ function drawTeoria() {
   ctx.beginPath(); ctx.moveTo(x0, yb - hh); ctx.lineTo(x0 + bw, yb); ctx.lineTo(x0, yb); ctx.closePath(); ctx.fill(); ctx.stroke();
   ctx.save(); ctx.translate(x0 + 4, yb - hh + 4 * Math.tan(th)); ctx.rotate(th);
   ctx.fillStyle = css("--block"); ctx.fillRect(10, -30, 34, 30); ctx.restore();
-  label(ctx, "Bloque de madera", x0 + 50, yb - hh - 28, css("--block"), { bold: true });
+  label(ctx, OB().rueda ? "Canica" : "Bloque", x0 + 50, yb - hh - 28, css("--block"), { bold: true });
   label(ctx, "Plano de madera pulida", x0 + bw * 0.34, yb - hh * 0.22, css("--wood-edge"), { bold: true, align: "center" });
   ctx.strokeStyle = css("--ink"); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x0 + bw, yb, 40, Math.PI, Math.PI + th); ctx.stroke();
   label(ctx, "θ = " + S.theta + "°", x0 + bw - 54, yb - 14, css("--ink"), { bold: true, align: "right" });
-  label(ctx, "h = L·sen θ = " + (S.L * Math.sin(th)).toFixed(3) + " m", x0 - 8, yb - hh / 2, css("--muted"), { align: "right", size: 12 });
-  label(ctx, "base = L·cos θ = " + (S.L * Math.cos(th)).toFixed(3) + " m", x0 + bw / 2, yb + 18, css("--muted"), { align: "center", size: 12 });
+  label(ctx, "h = L·sen θ = " + fLen(H()), x0 - 8, yb - hh / 2, css("--muted"), { align: "right", size: 12 });
+  label(ctx, "base = L·cos θ = " + fLen(S.L * Math.cos(th)), x0 + bw / 2, yb + 18, css("--muted"), { align: "center", size: 12 });
   $("tblMat").innerHTML = "<tr><th>Materiales</th><th>μₖ (aprox.)</th></tr>" +
-    MATERIALES.map(([n, v]) => `<tr><td style="text-align:left">${n}</td><td>${v.toFixed(2)}</td></tr>`).join("");
+    MATERIALES.slice(0, 6).map(([n, v]) => `<tr><td style="text-align:left">${n}</td><td>${v.toFixed(2)}</td></tr>`).join("");
 }
 
 /* ---------- Reporte PDF ---------- */
@@ -978,33 +1147,33 @@ function reporte() {
   ["cvSim", "cvX", "cvV", "cvDCL", "cvE", "cvSensT", "cvTrials"].forEach(id => { imgs[id] = $(id).toDataURL("image/png"); });
   sim.t = prevT; sim.playing = prevPlay;
   show(prevView);
-  const th = rad(S.theta), a = accel(), T = tDesc(), s = stats();
-  const ths = [30, 35, 40, 45, 50], mt = [0.15, 0.20, 0.25, 0.30];
-  const tbl = "<table><tr><th>θ</th>" + mt.map(m => `<th>μₖ = ${m.toFixed(2)}</th>`).join("") + "</tr>" +
-    ths.map(t => `<tr><th>${t}°</th>` + mt.map(m => `<td>${fmt(tDesc(t, m), 3)} s</td>`).join("") + "</tr>").join("") + "</table>";
+  const th = rad(S.theta), a = accel(), T = tDesc(), s = stats(), o = OB();
+  const tbl = "<table>" + $("tblSens").innerHTML + "</table>";
   const tr = trials.map((t, i) => `<tr><td>${i + 1}</td><td>${t === "" ? "" : Number(t).toFixed(3)}</td></tr>`).join("");
   $("reporte").innerHTML = `
     <h1>Proyecto del Plano Inclinado</h1>
-    <div>Determinación teórica y experimental del tiempo de descenso de un bloque con fricción cinética. Reporte generado el ${new Date().toLocaleDateString("es-GT")}.</div>
+    <div>Determinación teórica y experimental del tiempo de descenso${o.rueda ? " de una " + o.nombre + " que rueda" : " de un bloque con fricción cinética"}. Reporte generado el ${new Date().toLocaleDateString("es-GT")}.</div>
     <h2>1. Parámetros</h2>
-    <table><tr><th>θ</th><th>L</th><th>μₖ</th><th>g</th><th>v₀</th><th>m</th></tr>
-      <tr><td>${S.theta}°</td><td>${S.L.toFixed(2)} m</td><td>${S.mu.toFixed(2)}</td><td>${S.g.toFixed(2)} m/s²</td><td>0 m/s</td><td>${S.m.toFixed(2)} kg</td></tr></table>
+    <table><tr><th>Objeto</th><th>Tamaño</th><th>m</th><th>θ</th><th>h</th><th>L</th>${o.rueda ? "" : "<th>μₖ</th>"}<th>g</th><th>v₀</th></tr>
+      <tr><td>${o.rueda ? o.nombre + " (" + o.txt + ")" : "bloque"}</td><td>${fLen(S.size)}</td><td>${fMass(S.m)}</td><td>${S.theta}°</td><td>${fLen(H())}</td><td>${fLen(S.L)}</td>${o.rueda ? "" : `<td>${S.mu.toFixed(3)}</td>`}<td>${S.g.toFixed(2)} m/s²</td><td>0 m/s</td></tr></table>
     <h2>2. Análisis de fuerzas y cálculo teórico</h2>
-    <p>N = mg cos θ;  ma = mg sen θ − μₖ mg cos θ  ⟹  a = g(sen θ − μₖ cos θ) = ${S.g.toFixed(2)}(${Math.sin(th).toFixed(4)} − ${(S.mu * Math.cos(th)).toFixed(4)}) = <b>${fmt(a, 3)} m/s²</b></p>
-    <p>t = √(2L/a) = √(2 × ${S.L.toFixed(2)} / ${fmt(a, 3)}) = <b>${fmt(T, 3)} s</b>;  v = a·t = <b>${fmt(a * T, 2)} m/s</b></p>
+    <p>${o.rueda
+      ? `N = mg cos θ;  mg sen θ − fₛ = ma;  fₛ r = I α  ⟹  a = g sen θ / (1 + k) = ${S.g.toFixed(2)} × ${Math.sin(th).toFixed(4)} / ${(1 + o.k).toFixed(3)} = <b>${fmt(a, 3)} m/s²</b>`
+      : `N = mg cos θ;  ma = mg sen θ − μₖ mg cos θ  ⟹  a = g(sen θ − μₖ cos θ) = ${S.g.toFixed(2)}(${Math.sin(th).toFixed(4)} − ${(S.mu * Math.cos(th)).toFixed(4)}) = <b>${fmt(a, 3)} m/s²</b>`}</p>
+    <p>L = h / sen θ = ${fLen(H())} / ${Math.sin(th).toFixed(4)} = ${fLen(S.L)};  t = √(2L/a) = √(2 × ${S.L.toFixed(3)} / ${fmt(a, 3)}) = <b>${fmt(T, 3)} s</b>;  v = a·t = <b>${fmt(a * T, 2)} m/s</b></p>
     <img src="${imgs.cvDCL}">
     <img src="${imgs.cvSim}">
     <div style="display:flex;gap:8px"><img style="width:50%" src="${imgs.cvX}"><img style="width:50%" src="${imgs.cvV}"></div>
     <h2 class="pb">3. Energía</h2>
     <img src="${imgs.cvE}">
-    <h2>4. Sensibilidad (L = ${S.L.toFixed(2)} m)</h2>
+    <h2>4. Sensibilidad (L = ${fLen(S.L)})</h2>
     ${tbl}
     <img src="${imgs.cvSensT}">
     <h2 class="pb">5. Registro experimental</h2>
     <table style="width:50%"><tr><th>Ensayo</th><th>Tiempo medido (s)</th></tr>${tr}
       <tr><th>Promedio</th><th>${s ? s.prom.toFixed(3) : ""}</th></tr></table>
     <p>Error (%) = |t<sub>teórico</sub> − t<sub>experimental</sub>| / t<sub>experimental</sub> × 100 = ${s ? `|${fmt(T, 3)} − ${s.prom.toFixed(3)}| / ${s.prom.toFixed(3)} × 100 = <b>${s.err.toFixed(1)} %</b>` : "(sin datos)"}</p>
-    ${s ? `<p>Desviación estándar: ${s.desv.toFixed(3)} s. Nota según la escala: <b>${s.nota}</b>. μₖ experimental: ${s.muexp.toFixed(3)}.</p>` : ""}
+    ${s ? `<p>Desviación estándar: ${s.desv.toFixed(3)} s. Nota según la escala: <b>${s.nota}</b>. Aceleración medida: ${s.aexp.toFixed(3)} m/s²${o.rueda ? "" : ". μₖ experimental: " + s.muexp.toFixed(3)}.</p>` : ""}
     <img src="${imgs.cvTrials}">`;
   setTimeout(() => window.print(), 300);
 }
@@ -1018,22 +1187,51 @@ function show(v, silent) {
   if (!silent) try { localStorage.setItem("plano-inclinado-tab", v); } catch (e) {}
   render();
 }
+const UI = {   // id: [valor en el panel, convertir del panel a S]
+  theta: [() => S.theta, v => setTheta(v)],
+  h:     [() => H() * 100, v => { S.L = clampL(v / 100 / Math.sin(rad(S.theta))); }],
+  L:     [() => S.L * 100, v => { S.L = clampL(v / 100); }],
+  mu:    [() => S.mu, v => { S.mu = Math.max(0, v); }],
+  size:  [() => S.size * 100, v => { S.size = Math.max(0.002, v / 100); }],
+  m:     [() => S.m * 1000, v => { S.m = Math.max(0.0005, v / 1000); }],
+  g:     [() => S.g, v => { S.g = v; }]
+};
+const DEC = { theta: 1, h: 1, L: 1, mu: 3, size: 1, m: 1, g: 2 };
+function clampL(L) { return Math.min(3, Math.max(0.02, L)); }
+function setTheta(v) {
+  const h0 = H();
+  S.theta = Math.min(80, Math.max(1, v));
+  if ($("fixH").checked) S.L = clampL(h0 / Math.sin(rad(S.theta)));
+}
 function syncInputs() {
-  $("theta").value = S.theta; $("mu").value = S.mu; $("L").value = S.L; $("m").value = S.m; $("g").value = S.g;
+  Object.keys(UI).forEach(id => {
+    const v = UI[id][0]();
+    $(id).value = id === "m" ? Math.log10(v) : v;          // la masa usa escala logarítmica (1 g a 2 kg)
+    const n = $("n" + id);
+    if (document.activeElement !== n) n.value = +v.toFixed(DEC[id]);
+  });
   const mat = MATERIALES.findIndex(m => Math.abs(m[1] - S.mu) < 1e-9);
   $("material").value = mat >= 0 ? mat : "x";
+  $("obj").value = S.obj;
+  $("frictionCtrls").style.opacity = OB().rueda ? 0.55 : 1;
+  $("frictionCtrls").title = OB().rueda ? "Lo que rueda no depende de μₖ (se usa solo para comparar con el bloque)" : "";
+  $("oMkg").textContent = OB().rueda ? "La masa no cambia el tiempo de bajada." : "La masa no cambia el tiempo: solo cambia las fuerzas.";
+}
+function guardarParams() { try { localStorage.setItem("plano-inclinado-params", JSON.stringify(S)); } catch (e) {} }
+function cargarParams() {
+  try {
+    const v = JSON.parse(localStorage.getItem("plano-inclinado-params"));
+    if (v && typeof v === "object") Object.keys(PROYECTO).forEach(k => {
+      if (k === "obj" ? OBJETOS[v[k]] : Number.isFinite(v[k])) S[k] = v[k];
+    });
+  } catch (e) {}
 }
 function render(all) {
   const a = accel(), T = tDesc(), st = stateAt(sim.t);
-  $("oTheta").textContent = S.theta.toFixed(1) + "°";
-  $("oMu").textContent = S.mu.toFixed(2);
-  $("oL").textContent = S.L.toFixed(2) + " m";
-  $("oM").textContent = S.m.toFixed(2) + " kg";
-  $("oG").textContent = S.g.toFixed(2) + " m/s²";
   $("rT").textContent = Number.isFinite(T) ? T.toFixed(3) + " s" : "no desliza";
   $("rA").textContent = a > 0 ? a.toFixed(3) + " m/s²" : "0";
   $("rNowT").textContent = st.t.toFixed(3) + " s";
-  $("rNowX").textContent = st.x.toFixed(3) + " m";
+  $("rNowX").textContent = fLen(st.x);
   $("rNowV").textContent = st.v.toFixed(2) + " m/s";
   $("rVf").textContent = Number.isFinite(T) ? (a * T).toFixed(2) + " m/s" : "-";
   $("oScrub").textContent = st.t.toFixed(3) + " s";
@@ -1046,7 +1244,7 @@ function render(all) {
   if (!v || v === "registro") drawRegistro();
   if (!v || v === "teoria") drawTeoria();
 }
-function paramChanged() { sim.t = 0; sim.playing = false; $("btnPlay").textContent = "▶ Soltar bloque"; syncInputs(); renderTrials(); render(); }
+function paramChanged() { sim.t = 0; sim.playing = false; $("btnPlay").textContent = "▶ Soltar"; syncInputs(); renderTrials(); guardarParams(); render(); }
 
 let scrubbing = false;
 function loop(now) {
@@ -1063,14 +1261,30 @@ function loop(now) {
 }
 
 function init() {
-  $("material").innerHTML = MATERIALES.map((m, i) => `<option value="${i}">${m[0]} (${m[1].toFixed(2)})</option>`).join("") +
+  $("material").innerHTML = MATERIALES.map((m, i) => `<option value="${i}">${m[0]} (${+m[1].toFixed(3)})</option>`).join("") +
     `<option value="x">Valor personalizado</option>`;
-  ["theta", "mu", "L", "m", "g"].forEach(id => $(id).addEventListener("input", e => {
-    S[id] = Number(e.target.value);
-    if (id === "m" || id === "g") { syncInputs(); render(); } else paramChanged();
-  }));
+  Object.keys(UI).forEach(id => {
+    // m y g no cambian el tiempo: no reinician la animación
+    const apply = () => { if (id === "m" || id === "g" || id === "size") { syncInputs(); guardarParams(); render(); } else paramChanged(); };
+    $(id).addEventListener("input", e => {
+      const v = Number(e.target.value);
+      UI[id][1](id === "m" ? Math.pow(10, v) : v); apply();
+    });
+    $("n" + id).addEventListener("input", e => {
+      const v = Number(e.target.value);
+      if (e.target.value === "" || !Number.isFinite(v) || v <= 0 && id !== "mu") return;
+      UI[id][1](v); apply();
+    });
+    $("n" + id).addEventListener("change", () => syncInputs());
+  });
+  $("obj").addEventListener("change", e => { S.obj = e.target.value; paramChanged(); });
+  $("preset").innerHTML = `<option value="">Elige un ejemplo...</option>` + PRESETS.map((p, i) => `<option value="${i}">${p[0]}</option>`).join("");
+  $("preset").addEventListener("change", e => {
+    if (e.target.value === "") return;
+    Object.assign(S, PROYECTO, PRESETS[+e.target.value][1]); paramChanged();
+  });
   $("material").addEventListener("change", e => { if (e.target.value !== "x") { S.mu = MATERIALES[+e.target.value][1]; paramChanged(); } });
-  $("btnReset").onclick = () => { Object.assign(S, PROYECTO); paramChanged(); };
+  $("btnReset").onclick = () => { Object.assign(S, PROYECTO); $("preset").value = "0"; paramChanged(); };
   $("btnPlay").onclick = () => {
     const T = tDesc();
     if (sim.playing) { sim.playing = false; $("btnPlay").textContent = "▶ Continuar"; return; }
@@ -1078,7 +1292,7 @@ function init() {
     if (sim.t >= T) sim.t = 0;
     sim.playing = true; $("btnPlay").textContent = "❚❚ Pausa";
   };
-  $("btnStop").onclick = () => { sim.t = 0; sim.playing = false; $("btnPlay").textContent = "▶ Soltar bloque"; render(); };
+  $("btnStop").onclick = () => { sim.t = 0; sim.playing = false; $("btnPlay").textContent = "▶ Soltar"; render(); };
   const sc = $("scrub");
   sc.addEventListener("input", () => {
     scrubbing = true; sim.playing = false; $("btnPlay").textContent = "▶ Continuar";
@@ -1107,7 +1321,11 @@ function init() {
   });
   $("btnAddTrial").onclick = () => { trials.push(""); save(); renderTrials(); drawRegistro(); };
   $("btnClearTrials").onclick = () => { if (confirm("¿Borrar todas las mediciones?")) { trials = ["", "", "", "", ""]; save(); renderTrials(); drawRegistro(); } };
-  $("btnDemo").onclick = () => { trials = ["0.74", "0.69", "0.78", "0.71", "0.76"]; save(); renderTrials(); drawRegistro(); };
+  $("btnDemo").onclick = () => {
+    const T = tDesc(); if (!Number.isFinite(T)) return;
+    trials = [1.05, 0.98, 1.1, 1.01, 1.08].map(f => (T * f).toFixed(2)); save(); renderTrials(); drawRegistro();
+  };
+  $("btnUseMu").onclick = () => { const st = stats(); if (st && st.muexp > 0) { S.mu = +st.muexp.toFixed(3); paramChanged(); } };
   $("swStart").onclick = swToggle;
   $("swReset").onclick = () => { sw.run = false; sw.acc = 0; $("sw").textContent = "0.000 s"; };
   $("swAdd").onclick = () => {
@@ -1123,7 +1341,7 @@ function init() {
   window.addEventListener("resize", () => render());
   try { const t = localStorage.getItem("plano-inclinado-tema"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => render());
-  syncInputs(); renderTrials();
+  cargarParams(); syncInputs(); renderTrials();
   let tab = "sim"; try { tab = localStorage.getItem("plano-inclinado-tab") || "sim"; } catch (e) {}
   show(document.getElementById("v-" + tab) ? tab : "sim");
   requestAnimationFrame(t => { sim.last = t; loop(t); });
