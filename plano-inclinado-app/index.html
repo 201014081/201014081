@@ -203,12 +203,17 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
       <input type="range" id="theta" min="5" max="60" step="0.5">
     </div>
     <div class="ctrl">
-      <label>Altura de salida h <span class="numw"><input class="num" id="nh" type="number" step="0.5" min="1" max="150"> cm</span></label>
+      <label>Altura de salida h (desde donde lo sueltas) <span class="numw"><input class="num" id="nh" type="number" step="0.5" min="1" max="150"> cm</span></label>
       <input type="range" id="h" min="1" max="120" step="0.5">
     </div>
     <div class="ctrl">
-      <label>Distancia sobre el plano L <span class="numw"><input class="num" id="nL" type="number" step="0.5" min="2" max="300"> cm</span></label>
+      <label>Distancia recorrida L <span class="numw"><input class="num" id="nL" type="number" step="0.5" min="2" max="300"> cm</span></label>
       <input type="range" id="L" min="2" max="200" step="0.5">
+    </div>
+    <div class="ctrl">
+      <label>Altura del extremo de la tabla <span class="numw"><input class="num" id="nHt" type="number" step="0.5" min="0" max="200"> cm</span></label>
+      <input type="range" id="Ht" min="0" max="150" step="0.5">
+      <div class="note">Opcional. Pon 0 si sueltas el objeto desde la punta de la tabla.</div>
     </div>
     <div class="chk" style="margin:-4px 0 10px">
       <label><input type="checkbox" id="fixH" checked> Mantener la altura al cambiar el ángulo</label>
@@ -441,7 +446,7 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
 "use strict";
 
 /* ---------- Datos del proyecto ---------- */
-const PROYECTO = { theta: 35, mu: 0.20, L: 1.00, m: 0.25, g: 9.81, obj: "bloque", size: 0.08 };
+const PROYECTO = { theta: 35, mu: 0.20, L: 1.00, m: 0.25, g: 9.81, obj: "bloque", size: 0.08, Ht: 0 };
 const MATERIALES = [
   ["Madera sobre madera", 0.20],
   ["Vidrio sobre vidrio", 0.40],
@@ -450,15 +455,18 @@ const MATERIALES = [
   ["Teflón sobre teflón", 0.04],
   ["Hule sobre concreto seco", 0.80]
 ];
-// μₖ de vidrio sobre madera obtenido de la prueba en vídeo: 30°, h = 50 cm, t ≈ 2 s
-const MU_PRUEBA = +((9.81 * Math.sin(Math.PI / 6) - 2 * 1.0 / 4) / (9.81 * Math.cos(Math.PI / 6))).toFixed(3);
+// μₖ de vidrio sobre madera obtenido de la prueba en vídeo: tabla a 30° con su extremo a 35 cm,
+// el bloque recorrió unos 55 cm (entre 50 y 60) en t ≈ 2 s  ⟹  a = 2L/t² y μₖ = (g sen θ − a)/(g cos θ)
+const PRUEBA = { theta: 30, L: 0.55, Ht: 0.35, t: 2.0 };
+const MU_PRUEBA = +((9.81 * Math.sin(rad0(PRUEBA.theta)) - 2 * PRUEBA.L / PRUEBA.t ** 2) / (9.81 * Math.cos(rad0(PRUEBA.theta)))).toFixed(3);
+function rad0(d) { return d * Math.PI / 180; }
 MATERIALES.push(["Vidrio sobre madera (tu prueba en vídeo)", MU_PRUEBA]);
 const PRESETS = [
   ["Proyecto original: bloque de madera, 35°, L = 1.00 m", PROYECTO],
-  ["Mi prueba: bloque de vidrio 2×2 cm, 30°, altura 50 cm (t ≈ 2 s)",
-    { theta: 30, L: 1.00, mu: MU_PRUEBA, m: 0.010, obj: "bloque", size: 0.02 }],
-  ["Canica de vidrio (5 g, 1.6 cm), 30°, altura 50 cm",
-    { theta: 30, L: 1.00, m: 0.005, obj: "canica", size: 0.016 }],
+  ["Mi prueba: bloque de vidrio 2×2 cm, 30°, tabla a 35 cm, recorrido 55 cm (t ≈ 2 s)",
+    { theta: PRUEBA.theta, L: PRUEBA.L, Ht: PRUEBA.Ht, mu: MU_PRUEBA, m: 0.010, obj: "bloque", size: 0.02 }],
+  ["Canica de vidrio (5 g, 1.6 cm) en la misma tabla: 30°, recorrido 55 cm",
+    { theta: PRUEBA.theta, L: PRUEBA.L, Ht: PRUEBA.Ht, m: 0.005, obj: "canica", size: 0.016 }],
   ["Bloquecito de madera (3 cm, 15 g), 30°, altura 25 cm",
     { theta: 30, L: 0.50, mu: 0.20, m: 0.015, obj: "bloque", size: 0.03 }],
   ["Canica en rampa corta: 20°, L = 30 cm",
@@ -633,17 +641,21 @@ function drawSim() {
   const st = stateAt(sim.t);
   // tamaño visual del objeto: el real, pero entre 16 y 56 px para que siempre se vea
   const fit = (L, b) => Math.min((w - 300) / (L * Math.cos(th)), (h - 110) / (L * Math.sin(th) + b));
-  const sc0 = fit(S.L + S.size, S.size);
+  // largo de la tabla: lo recorrido o, si se indicó, hasta la altura de su extremo
+  const Lp = b => Math.max(S.L + b, S.Ht / Math.sin(th));
+  const sc0 = fit(Lp(S.size), S.size);
   let blk = Math.min(Math.max(S.size * sc0, 16), 56) / sc0;
-  let Ltot = S.L + blk;
+  let Ltot = Lp(blk);
   const sc = fit(Ltot, blk);
+  const off = Ltot - S.L - blk;                     // tramo de tabla por encima del punto de salida
   const run = Ltot * Math.cos(th) * sc, rise = Ltot * Math.sin(th) * sc;
   const x0 = (w - run) / 2 - 10, yb = h - 34;         // esquina inferior izquierda
   const top = { x: x0, y: yb - rise };              // punto alto (izquierda)
   const bot = { x: x0 + run, y: yb };               // punto bajo (derecha)
   const ux = Math.cos(th), uy = Math.sin(th);       // dirección pendiente abajo (pantalla)
   const nx = Math.sin(th), ny = -Math.cos(th);      // normal hacia fuera
-  const P = d => ({ x: top.x + d * sc * ux, y: top.y + d * sc * uy });
+  const P0 = d => ({ x: top.x + d * sc * ux, y: top.y + d * sc * uy });
+  const P = d => P0(d + off);                       // d medido desde el punto de salida
   const bp = blk * sc;
 
   // suelo
@@ -666,11 +678,21 @@ function drawSim() {
   label(ctx, "θ = " + S.theta.toFixed(1) + "°", bot.x - 62 - 50 * Math.cos(th / 2), bot.y - 16 - 20 * Math.sin(th / 2), css("--ink"), { size: 15, bold: true, align: "right" });
   // altura de salida (desde la base del objeto en la salida hasta el suelo)
   const ps = P(blk);
-  ctx.strokeStyle = css("--muted"); ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(ps.x, ps.y); ctx.lineTo(x0 - 26, ps.y); ctx.stroke(); ctx.setLineDash([]);
-  arrow(ctx, x0 - 20, (ps.y + yb) / 2, x0 - 20, ps.y, css("--muted"), 1.2);
-  arrow(ctx, x0 - 20, (ps.y + yb) / 2, x0 - 20, yb, css("--muted"), 1.2);
-  label(ctx, "h = " + fLen(H()), x0 - 28, (ps.y + yb) / 2, css("--muted"), { size: 13, align: "right", halo: true });
+  if (off * sc > 6) {
+    // la tabla sigue por encima del punto de salida: se acotan las dos alturas
+    ctx.strokeStyle = css("--accent"); ctx.setLineDash([4, 3]); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(ps.x, ps.y); ctx.lineTo(ps.x, yb); ctx.stroke(); ctx.setLineDash([]);
+    label(ctx, "h salida = " + fLen(H()), ps.x + 8, (ps.y + yb) / 2, css("--accent"), { size: 13, bold: true, halo: true });
+    arrow(ctx, x0 - 20, (top.y + yb) / 2, x0 - 20, top.y, css("--muted"), 1.2);
+    arrow(ctx, x0 - 20, (top.y + yb) / 2, x0 - 20, yb, css("--muted"), 1.2);
+    label(ctx, "tabla " + fLen(Ltot * Math.sin(th)), x0 - 28, (top.y + yb) / 2, css("--muted"), { size: 13, align: "right", halo: true });
+  } else {
+    ctx.strokeStyle = css("--muted"); ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(ps.x, ps.y); ctx.lineTo(x0 - 26, ps.y); ctx.stroke(); ctx.setLineDash([]);
+    arrow(ctx, x0 - 20, (ps.y + yb) / 2, x0 - 20, ps.y, css("--muted"), 1.2);
+    arrow(ctx, x0 - 20, (ps.y + yb) / 2, x0 - 20, yb, css("--muted"), 1.2);
+    label(ctx, "h = " + fLen(H()), x0 - 28, (ps.y + yb) / 2, css("--muted"), { size: 13, align: "right", halo: true });
+  }
   // marcas de salida y llegada
   const mark = (d, txt) => {
     const p = P(d);
@@ -680,9 +702,9 @@ function drawSim() {
     label(ctx, txt, p.x + nx * (bp + 30), p.y + ny * (bp + 30), css("--bad"), { size: 12, bold: true, align: "center", halo: true });
   };
   mark(blk, "Salida");
-  mark(Ltot, "Llegada");
+  mark(S.L + blk, "Llegada");
   // cota L
-  const pb = P(Ltot);
+  const pb = P(S.L + blk);
   const ca = { x: ps.x - nx * 18, y: ps.y - ny * 18 }, cb = { x: pb.x - nx * 18, y: pb.y - ny * 18 };
   arrow(ctx, (ca.x + cb.x) / 2, (ca.y + cb.y) / 2, ca.x, ca.y, css("--muted"), 1.2);
   arrow(ctx, (ca.x + cb.x) / 2, (ca.y + cb.y) / 2, cb.x, cb.y, css("--muted"), 1.2);
@@ -769,7 +791,9 @@ function drawSim() {
     label(ctx, "¡Llegó!  t = " + T.toFixed(3) + " s,  v = " + st.v.toFixed(2) + " m/s", 20, 24, css("--ok"), { size: 15, bold: true });
   }
   const msg = $("simMsg");
-  if (a <= 0) {
+  if (S.Ht > 0 && S.Ht < H() - 1e-6) {
+    msg.innerHTML = `<div class="alert bad">La altura de la tabla (${fLen(S.Ht)}) es menor que la altura de salida (${fLen(H())}). Con θ = ${S.theta}°, recorrer ${fLen(S.L)} necesita una tabla de al menos ${fLen(H())} de alto. Revisa el ángulo, la distancia o la altura.</div>`;
+  } else if (a <= 0) {
     msg.innerHTML = `<div class="alert bad">El bloque <b>no desliza</b>: tan ${S.theta.toFixed(1)}° = ${Math.tan(th).toFixed(3)} ≤ μₖ = ${S.mu.toFixed(2)}. Aumenta el ángulo por encima de ${(Math.atan(S.mu) * 180 / Math.PI).toFixed(1)}° o usa un material con menos fricción.</div>`;
   } else if (o.rueda) {
     msg.innerHTML = `<div class="alert ok">La ${o.nombre} <b>rueda sin deslizar</b> (${o.txt}): a = g·sen θ / (1 + ${+o.k.toFixed(3)}). El tiempo no depende de la masa, del tamaño ni del μₖ.
@@ -780,6 +804,7 @@ function drawSim() {
       Aquí el tiempo es muy sensible: si μₖ sube solo 0.03, el tiempo pasa de ${fmt(T, 2)} s a ${Number.isFinite(t2) ? t2.toFixed(2) + " s" : "no bajar"}.
       Con 5° más (${S.theta + 5}°) tardaría ${fmt(t3, 2)} s y tus mediciones serían más estables.</div>`;
   } else msg.innerHTML = "";
+  if (tablaTxt()) msg.innerHTML += `<p class="note" style="margin:6px 0 0">${tablaTxt().trim()}</p>`;
 }
 
 function drawKinematics() {
@@ -1093,12 +1118,20 @@ function swToggle() {
 }
 
 /* ---------- Teoría ---------- */
+// Explica la geometría cuando la tabla es más larga que lo recorrido
+function tablaTxt() {
+  if (!(S.Ht > 0)) return "";
+  const th = rad(S.theta), Lt = S.Ht / Math.sin(th), sobra = Lt - S.L;
+  return sobra > 0.001
+    ? ` La tabla llega a ${fLen(S.Ht)} de altura, así que mide ${fLen(S.Ht)} / sen ${S.theta}° = ${fLen(Lt)}. El objeto se soltó a ${fLen(sobra)} de la punta y recorrió solo ${fLen(S.L)}: la altura que cuenta es la de salida, ${fLen(H())}, no la de la tabla.`
+    : "";
+}
 function drawTeoria() {
   const th = rad(S.theta), a = accel(), T = tDesc();
   const o = OB();
   const pasos = [
     ["Se mide el montaje", `Ángulo θ = ${S.theta}° (transportador o app) y altura de salida h = ${fLen(H())}. La distancia sobre el plano es
-      L = h / sen θ = ${fLen(H())} / ${Math.sin(th).toFixed(4)} = ${fLen(S.L)}. El objeto (${o.rueda ? o.nombre : "bloque"} de ${fLen(S.size)}, ${fMass(S.m)}) parte del reposo (v₀ = 0).`],
+      L = h / sen θ = ${fLen(H())} / ${Math.sin(th).toFixed(4)} = ${fLen(S.L)}. El objeto (${o.rueda ? o.nombre : "bloque"} de ${fLen(S.size)}, ${fMass(S.m)}) parte del reposo (v₀ = 0).${tablaTxt()}`],
     ["Se dibujan las fuerzas", o.rueda
       ? `Peso mg, normal N y una fricción <b>estática</b> fₛ en el punto de contacto. Esa fricción no frena por arrastre: es la que hace girar la ${o.nombre}.`
       : `Peso mg (hacia abajo), normal N (perpendicular al plano) y fricción cinética fₖ (contra el movimiento). Se usan ejes x paralelo al plano e y perpendicular.`],
@@ -1154,13 +1187,13 @@ function reporte() {
     <h1>Proyecto del Plano Inclinado</h1>
     <div>Determinación teórica y experimental del tiempo de descenso${o.rueda ? " de una " + o.nombre + " que rueda" : " de un bloque con fricción cinética"}. Reporte generado el ${new Date().toLocaleDateString("es-GT")}.</div>
     <h2>1. Parámetros</h2>
-    <table><tr><th>Objeto</th><th>Tamaño</th><th>m</th><th>θ</th><th>h</th><th>L</th>${o.rueda ? "" : "<th>μₖ</th>"}<th>g</th><th>v₀</th></tr>
-      <tr><td>${o.rueda ? o.nombre + " (" + o.txt + ")" : "bloque"}</td><td>${fLen(S.size)}</td><td>${fMass(S.m)}</td><td>${S.theta}°</td><td>${fLen(H())}</td><td>${fLen(S.L)}</td>${o.rueda ? "" : `<td>${S.mu.toFixed(3)}</td>`}<td>${S.g.toFixed(2)} m/s²</td><td>0 m/s</td></tr></table>
+    <table><tr><th>Objeto</th><th>Tamaño</th><th>m</th><th>θ</th><th>h salida</th><th>L recorrida</th>${o.rueda ? "" : "<th>μₖ</th>"}<th>g</th><th>v₀</th></tr>
+      <tr><td>${o.rueda ? o.nombre + " (" + o.txt + ")" : "bloque"}</td><td>${fLen(S.size)}</td><td>${fMass(S.m)}</td><td>${S.theta}°</td><td>${fLen(H())}${S.Ht > 0 ? " (tabla " + fLen(S.Ht) + ")" : ""}</td><td>${fLen(S.L)}</td>${o.rueda ? "" : `<td>${S.mu.toFixed(3)}</td>`}<td>${S.g.toFixed(2)} m/s²</td><td>0 m/s</td></tr></table>
     <h2>2. Análisis de fuerzas y cálculo teórico</h2>
     <p>${o.rueda
       ? `N = mg cos θ;  mg sen θ − fₛ = ma;  fₛ r = I α  ⟹  a = g sen θ / (1 + k) = ${S.g.toFixed(2)} × ${Math.sin(th).toFixed(4)} / ${(1 + o.k).toFixed(3)} = <b>${fmt(a, 3)} m/s²</b>`
       : `N = mg cos θ;  ma = mg sen θ − μₖ mg cos θ  ⟹  a = g(sen θ − μₖ cos θ) = ${S.g.toFixed(2)}(${Math.sin(th).toFixed(4)} − ${(S.mu * Math.cos(th)).toFixed(4)}) = <b>${fmt(a, 3)} m/s²</b>`}</p>
-    <p>L = h / sen θ = ${fLen(H())} / ${Math.sin(th).toFixed(4)} = ${fLen(S.L)};  t = √(2L/a) = √(2 × ${S.L.toFixed(3)} / ${fmt(a, 3)}) = <b>${fmt(T, 3)} s</b>;  v = a·t = <b>${fmt(a * T, 2)} m/s</b></p>
+    <p>Recorrido L = ${fLen(S.L)} (altura de salida h = L·sen θ = ${fLen(H())});  t = √(2L/a) = √(2 × ${S.L.toFixed(3)} / ${fmt(a, 3)}) = <b>${fmt(T, 3)} s</b>;  v = a·t = <b>${fmt(a * T, 2)} m/s</b></p>
     <img src="${imgs.cvDCL}">
     <img src="${imgs.cvSim}">
     <div style="display:flex;gap:8px"><img style="width:50%" src="${imgs.cvX}"><img style="width:50%" src="${imgs.cvV}"></div>
@@ -1194,9 +1227,10 @@ const UI = {   // id: [valor en el panel, convertir del panel a S]
   mu:    [() => S.mu, v => { S.mu = Math.max(0, v); }],
   size:  [() => S.size * 100, v => { S.size = Math.max(0.002, v / 100); }],
   m:     [() => S.m * 1000, v => { S.m = Math.max(0.0005, v / 1000); }],
-  g:     [() => S.g, v => { S.g = v; }]
+  g:     [() => S.g, v => { S.g = v; }],
+  Ht:    [() => S.Ht * 100, v => { S.Ht = Math.max(0, v / 100); }]
 };
-const DEC = { theta: 1, h: 1, L: 1, mu: 3, size: 1, m: 1, g: 2 };
+const DEC = { theta: 1, h: 1, L: 1, mu: 3, size: 1, m: 1, g: 2, Ht: 1 };
 function clampL(L) { return Math.min(3, Math.max(0.02, L)); }
 function setTheta(v) {
   const h0 = H();
@@ -1265,14 +1299,14 @@ function init() {
     `<option value="x">Valor personalizado</option>`;
   Object.keys(UI).forEach(id => {
     // m y g no cambian el tiempo: no reinician la animación
-    const apply = () => { if (id === "m" || id === "g" || id === "size") { syncInputs(); guardarParams(); render(); } else paramChanged(); };
+    const apply = () => { if (id === "m" || id === "g" || id === "size" || id === "Ht") { syncInputs(); guardarParams(); render(); } else paramChanged(); };
     $(id).addEventListener("input", e => {
       const v = Number(e.target.value);
       UI[id][1](id === "m" ? Math.pow(10, v) : v); apply();
     });
     $("n" + id).addEventListener("input", e => {
       const v = Number(e.target.value);
-      if (e.target.value === "" || !Number.isFinite(v) || v <= 0 && id !== "mu") return;
+      if (e.target.value === "" || !Number.isFinite(v) || v < 0 || v === 0 && id !== "mu" && id !== "Ht") return;
       UI[id][1](v); apply();
     });
     $("n" + id).addEventListener("change", () => syncInputs());
