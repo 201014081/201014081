@@ -362,6 +362,12 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
           La celda remarcada es la más cercana a tus parámetros.</p>
         <div id="sensMsg"></div>
       </div>
+      <div class="card">
+        <h2>Comparar fuentes para tus superficies</h2>
+        <p class="note" style="margin-top:0">Mismo par de materiales según cada tabla, con tu ángulo y tu distancia. Así ves cuánto cambia el resultado según la fuente.</p>
+        <div style="overflow-x:auto"><table id="tblFuentes"></table></div>
+        <div id="fuentesMsg" style="margin-top:8px"></div>
+      </div>
     </section>
 
     <!-- ================= REGISTRO ================= -->
@@ -433,11 +439,18 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
             <li><b>¿Por qué L = 1.00 m?</b> Un recorrido largo aumenta el tiempo y así el error del cronómetro (0.1 a 0.2 s) pesa menos en porcentaje.</li>
             <li><b>Bloque contra canica:</b> el bloque se arrastra y la fricción le quita energía (calor). La canica rueda: la fricción solo la hace girar, por eso su tiempo no depende de μₖ (a = 5/7·g sen θ).</li>
             <li><b>Distancias cortas:</b> el tiempo crece con √L. Con 25 cm tarda la mitad que con 1 m. Mientras más corto, más importa tu tiempo de reacción: mejor medir con vídeo.</li>
+            <li><b>Los coeficientes son aproximados:</b> para madera sobre madera, Giancoli da μₖ = 0.2, Tippens 0.4 y Hibbeler un μₛ entre 0.30 y 0.70. Dependen de si la madera está lijada, limpia o seca (Moyota Chuiza, 2023).</li>
             <li><b>Fricción estática:</b> para arrancar hay que vencer μₛ (mayor que μₖ). Si el bloque no arranca, dale un toque mínimo o aumenta el ángulo.</li>
           </ul>
-          <h3>Coeficientes de rozamiento de algunas sustancias (tabla consultada)</h3>
-          <p class="note" style="margin-top:0">La fila remarcada es la que está usando la simulación. Recuerda citar la página de donde sacaste la tabla.</p>
+          <h3>Coeficientes de fricción (documento de respaldo)</h3>
+          <p class="note" style="margin-top:0">Tablas 2.3 y 2.2 de Moyota Chuiza (2023), pp. 33 y 34. La fila remarcada es la que usa la simulación.
+            El documento advierte que estos valores son aproximados y cambian con la rugosidad, la limpieza y el brillo de las superficies.</p>
           <table id="tblMat"></table>
+          <h3>Bibliografía</h3>
+          <p class="note" style="margin-top:0">Moyota Chuiza, E. A. (2023). <i>Recurso didáctico como herramienta pedagógica para integrar aspectos teóricos y experimentales
+            relacionados con la fuerza de fricción</i> [Trabajo de titulación, Universidad Nacional de Chimborazo]. Riobamba, Ecuador. Tablas 2.2 y 2.3, pp. 33 y 34.</p>
+          <p class="note">Giancoli, D. C. (2006). <i>Física: principios con aplicaciones</i> (6.ª ed.). Pearson Educación. (Citado en Moyota Chuiza, 2023, Tabla 2.3.)</p>
+          <p class="note">Tippens, P. E. (2001). <i>Física: conceptos y aplicaciones</i>. McGraw-Hill. (Citado en Moyota Chuiza, 2023, Tabla 2.2.)</p>
         </div>
       </div>
     </section>
@@ -451,47 +464,68 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
 "use strict";
 
 /* ---------- Datos del proyecto ---------- */
-const PROYECTO = { theta: 35, mu: 0.20, mus: 0.40, L: 1.00, m: 0.25, g: 9.81, obj: "bloque", size: 0.08, Ht: 0, matName: "Madera // Madera (Serway, usado en tu documento)" };
-// Tabla "Coeficientes de rozamiento de algunas sustancias": [materiales, μₖ cinético, μₛ estático]
+const PROYECTO = { theta: 35, mu: 0.20, mus: 0.40, L: 1.00, m: 0.25, g: 9.81, obj: "bloque", size: 0.08, Ht: 0, matName: "C | Madera sobre madera (Serway, usado en tu documento)" };
+// Coeficientes de fricción: [materiales, μₖ cinético, μₛ estático, fuente, par de superficies, nota]
+// Fuente principal: Moyota Chuiza (2023), UNACH, Tablas 2.2 y 2.3 (pp. 33 y 34), tomadas de Tippens (2001) y Giancoli (2006)
+const FUENTES = {
+  G: "Giancoli (2006), Tabla 2.3 del documento UNACH",
+  T: "Tippens (2001), Tabla 2.2 del documento UNACH",
+  W: "Tabla de internet (Coeficientes de rozamiento de algunas sustancias)",
+  C: "Valores de tu proyecto y de tu medición"
+};
 const MATERIALES = [
-  ["Hielo // Hielo", 0.03, 0.1],
-  ["Vidrio // Vidrio", 0.4, 0.9],
-  ["Vidrio // Madera", 0.2, 0.25],
-  ["Madera // Cuero", 0.3, 0.4],
-  ["Madera // Piedra", 0.3, 0.7],
-  ["Madera // Madera", 0.3, 0.4],
-  ["Acero // Acero", 0.57, 0.74],
-  ["Acero // Hielo", 0.02, 0.03],
-  ["Acero // Latón", 0.4, 0.5],
-  ["Acero // Teflón", 0.04, 0.04],
-  ["Teflón // Teflón", 0.04, 0.04],
-  ["Caucho // Cemento (seco)", 0.8, 1.0],
-  ["Caucho // Cemento (húmedo)", 0.25, 0.3],
-  ["Cobre // Hierro (fundido)", 0.3, 1.1],
-  ["Esquí (encerado) // Nieve (0 °C)", 0.05, 0.1],
-  ["Articulaciones humanas", 0.003, 0.01]
+  ["Madera sobre vidrio", 0.2, 0.25, "G", "mv"],
+  ["Madera sobre madera", 0.2, 0.4, "G", "mm"],
+  ["Hielo sobre hielo", 0.03, 0.1, "G", "hh"],
+  ["Metal sobre metal (lubricado)", 0.07, 0.15, "G", "aa"],
+  ["Acero sobre acero (sin lubricar)", 0.6, 0.7, "G", "aa"],
+  ["Hule sobre concreto seco", 0.8, 1.0, "G", "hcs"],
+  ["Hule sobre concreto mojado", 0.5, 0.7, "G", "hcm"],
+  ["Hule sobre otras superficies sólidas", 1, 1.0, "G", "ho", { s: "1.0 a 4.0" }],
+  ["Teflón sobre teflón en aire", 0.04, 0.04, "G", "tt"],
+  ["Teflón sobre acero en aire", 0.04, 0.04, "G", "ta"],
+  ["Cojinetes lubricados", 0.01, 0.01, "G", "cj", { s: "< 0.01", k: "< 0.01" }],
+  ["Articulaciones sinoviales (extremidades humanas)", 0.01, 0.01, "G", "art"],
+  ["Madera sobre madera", 0.4, 0.7, "T", "mm"],
+  ["Acero sobre acero", 0.09, 0.15, "T", "aa"],
+  ["Metal sobre cuero", 0.5, 0.6, "T", "mc"],
+  ["Madera sobre cuero", 0.4, 0.5, "T", "mcu"],
+  ["Caucho sobre concreto seco", 0.7, 0.9, "T", "hcs"],
+  ["Caucho sobre concreto mojado", 0.57, 0.7, "T", "hcm"],
+  ["Vidrio // Madera", 0.2, 0.25, "W", "mv"],
+  ["Madera // Madera", 0.3, 0.4, "W", "mm"],
+  ["Vidrio // Vidrio", 0.4, 0.9, "W", "vv"],
+  ["Madera // Cuero", 0.3, 0.4, "W", "mcu"],
+  ["Madera // Piedra", 0.3, 0.7, "W", "mp"],
+  ["Acero // Acero", 0.57, 0.74, "W", "aa"],
+  ["Acero // Hielo", 0.02, 0.03, "W", "ah"],
+  ["Acero // Latón", 0.4, 0.5, "W", "al"],
+  ["Caucho // Cemento (seco)", 0.8, 1.0, "W", "hcs"],
+  ["Caucho // Cemento (húmedo)", 0.25, 0.3, "W", "hcm"],
+  ["Cobre // Hierro (fundido)", 0.3, 1.1, "W", "ch"],
+  ["Esquí (encerado) // Nieve (0 °C)", 0.05, 0.1, "W", "en"]
 ];
-const N_TABLA = MATERIALES.length;
+const mid = m => m[3] + " | " + m[0];          // identificador único de cada fila
 // μₖ de vidrio sobre madera obtenido de la prueba en vídeo: tabla a 30° con su extremo a 35 cm,
 // el bloque recorrió unos 55 cm (entre 50 y 60) en t ≈ 2 s  ⟹  a = 2L/t² y μₖ = (g sen θ − a)/(g cos θ)
 const PRUEBA = { theta: 30, L: 0.55, Ht: 0.35, t: 2.0 };
 const MU_PRUEBA = +((9.81 * Math.sin(rad0(PRUEBA.theta)) - 2 * PRUEBA.L / PRUEBA.t ** 2) / (9.81 * Math.cos(rad0(PRUEBA.theta)))).toFixed(3);
 function rad0(d) { return d * Math.PI / 180; }
-MATERIALES.push(["Vidrio // Madera calculado con tu tiempo de 2 s", MU_PRUEBA, 0.6], ["Madera // Madera (Serway, usado en tu documento)", 0.20, 0.40]);
+MATERIALES.push(["Madera sobre madera (Serway, usado en tu documento)", 0.20, 0.40, "C", "mm"], ["Madera sobre vidrio calculado con tu tiempo de 2 s", MU_PRUEBA, 0.6, "C", "mv"]);
 const PRESETS = [
   ["Proyecto del documento: madera, 35°, L = 1.00 m, μₖ = 0.20 (Serway)", PROYECTO],
-  ["Proyecto con la nueva tabla: Madera // Madera, μₖ = 0.30, μₛ = 0.40",
-    { mu: 0.30, mus: 0.40, matName: "Madera // Madera" }],
-  ["Mi prueba con la tabla: bloque de vidrio 2×2 cm sobre madera (μₖ = 0.20), 30°, recorrido 55 cm",
-    { theta: PRUEBA.theta, L: PRUEBA.L, Ht: PRUEBA.Ht, mu: 0.20, mus: 0.25, matName: "Vidrio // Madera", m: 0.010, obj: "bloque", size: 0.02 }],
+  ["Proyecto con Tippens: madera sobre madera, μₖ = 0.40, μₛ = 0.70",
+    { mu: 0.40, mus: 0.70, matName: "T | Madera sobre madera" }],
+  ["Mi prueba con Giancoli: bloque de vidrio 2×2 cm sobre madera (μₖ = 0.20, μₛ = 0.25), 30°, recorrido 55 cm",
+    { theta: PRUEBA.theta, L: PRUEBA.L, Ht: PRUEBA.Ht, mu: 0.20, mus: 0.25, matName: "G | Madera sobre vidrio", m: 0.010, obj: "bloque", size: 0.02 }],
   ["Mi prueba con el μₖ que sale de tu tiempo de 2 s (μₖ = " + MU_PRUEBA + ")",
-    { theta: PRUEBA.theta, L: PRUEBA.L, Ht: PRUEBA.Ht, mu: MU_PRUEBA, mus: 0.6, matName: "Vidrio // Madera calculado con tu tiempo de 2 s", m: 0.010, obj: "bloque", size: 0.02 }],
+    { theta: PRUEBA.theta, L: PRUEBA.L, Ht: PRUEBA.Ht, mu: MU_PRUEBA, mus: 0.6, matName: "C | Madera sobre vidrio calculado con tu tiempo de 2 s", m: 0.010, obj: "bloque", size: 0.02 }],
   ["Canica de vidrio (5 g, 1.6 cm) en la misma tabla: 30°, recorrido 55 cm",
-    { theta: PRUEBA.theta, L: PRUEBA.L, Ht: PRUEBA.Ht, mu: 0.20, mus: 0.25, matName: "Vidrio // Madera", m: 0.005, obj: "canica", size: 0.016 }],
+    { theta: PRUEBA.theta, L: PRUEBA.L, Ht: PRUEBA.Ht, mu: 0.20, mus: 0.25, matName: "G | Madera sobre vidrio", m: 0.005, obj: "canica", size: 0.016 }],
   ["Bloquecito de madera (3 cm, 15 g), 30°, altura 25 cm",
-    { theta: 30, L: 0.50, mu: 0.30, mus: 0.40, matName: "Madera // Madera", m: 0.015, obj: "bloque", size: 0.03 }],
+    { theta: 30, L: 0.50, mu: 0.20, mus: 0.40, matName: "G | Madera sobre madera", m: 0.015, obj: "bloque", size: 0.03 }],
   ["Canica en rampa corta: 20°, L = 30 cm",
-    { theta: 20, L: 0.30, mu: 0.20, mus: 0.25, m: 0.005, obj: "canica", size: 0.016 }]
+    { theta: 20, L: 0.30, mu: 0.20, mus: 0.25, matName: "G | Madera sobre vidrio", m: 0.005, obj: "canica", size: 0.016 }]
 ];
 // Objetos que ruedan sin deslizar: k = I / (m r²)
 const OBJETOS = {
@@ -1007,7 +1041,28 @@ function drawEnergy() {
 }
 
 /* ---------- Sensibilidad ---------- */
+function drawFuentes() {
+  const cur = MATERIALES.find(m => mid(m) === S.matName);
+  if (!cur) {
+    $("tblFuentes").innerHTML = "";
+    $("fuentesMsg").innerHTML = `<p class="note">Elige un material de la lista para comparar fuentes.</p>`;
+    return;
+  }
+  const filas = MATERIALES.filter(m => m[4] === cur[4]);
+  const o = OB(), tan = Math.tan(rad(S.theta));
+  $("tblFuentes").innerHTML = "<tr><th>Fuente</th><th>Superficies</th><th>μₛ</th><th>μₖ</th><th>¿Arranca solo?</th><th>Tiempo para " + fLen(S.L) + "</th></tr>" +
+    filas.map(m => {
+      const t = tDesc(S.theta, m[1]), arr = tan > m[2] ? "Sí" : tan > m[1] ? "Con un toque" : "No baja";
+      return `<tr${m === cur ? ' style="font-weight:700;outline:2px solid var(--accent)"' : ""}><td style="text-align:left">${FUENTES[m[3]]}</td><td style="text-align:left">${m[0]}</td>
+        <td>${m[2]}</td><td>${+m[1].toFixed(3)}</td><td>${arr}</td><td>${o.rueda ? "no aplica" : Number.isFinite(t) ? t.toFixed(3) + " s" : "no baja"}</td></tr>`;
+    }).join("");
+  const ts = filas.map(m => tDesc(S.theta, m[1])).filter(Number.isFinite);
+  $("fuentesMsg").innerHTML = o.rueda
+    ? `<p class="note">La ${o.nombre} rueda, así que su tiempo no depende de μₖ (${fmt(tDesc(), 3)} s en cualquier caso).</p>`
+    : ts.length > 1 ? `<p class="note">Según la fuente, el tiempo teórico va de ${Math.min(...ts).toFixed(3)} s a ${Math.max(...ts).toFixed(3)} s.</p>` : "";
+}
 function drawSens() {
+  drawFuentes();
   const T0 = tDesc(), o = OB();
   const pal = ["--s4", "--s1", "--s3", "--s2", "--s5"];
   const yTop = Math.max(1.2, Number.isFinite(T0) ? T0 * 1.8 : 2);
@@ -1128,6 +1183,7 @@ function drawRegistro() {
       : `<p class="note">Con tu promedio, la aceleración real fue a = 2L/t² = 2 × ${S.L.toFixed(3)} / ${s.prom.toFixed(3)}² = ${s.aexp.toFixed(3)} m/s², lo que equivale a un
         μₖ real de ${s.muexp.toFixed(3)}:  μₖ = (g sen θ − a) / (g cos θ). (Valor actual en la simulación: ${S.mu.toFixed(3)}.)${s.n < 5 ? " Recuerda hacer al menos 5 mediciones." : ""}</p>`;
     if (!o.rueda && Math.abs(s.muexp - S.mu) > 0.1) msg += `<div class="alert warn" style="margin-top:6px">Tu tiempo indica μₖ ≈ ${s.muexp.toFixed(2)}, pero la simulación usa ${S.mu.toFixed(2)}.
+      El documento de respaldo (Moyota Chuiza, 2023, p. 34) explica que los coeficientes cambian según la rugosidad, la limpieza y el brillo de las superficies.
       Si la diferencia es real, puede deberse a: que la tabla no está pulida (madera sin lijar o con polvo), a contar el tiempo desde antes de soltar
       o hasta después de llegar, a que el bloque no salió desde el reposo de forma limpia, o a que el ángulo real es distinto. Prueba medir sobre el vídeo, cuadro por cuadro.</div>`;
     if (s.prom < 1) msg += `<p class="note">Tiempos menores de 1 s: tu reacción (0.1 a 0.2 s) puede ser más del 10 % del tiempo. Mide sobre el vídeo en cámara lenta.</p>`;
@@ -1201,8 +1257,9 @@ function drawTeoria() {
   label(ctx, "θ = " + S.theta + "°", x0 + bw - 54, yb - 14, css("--ink"), { bold: true, align: "right" });
   label(ctx, "h = L·sen θ = " + fLen(H()), x0 - 8, yb - hh / 2, css("--muted"), { align: "right", size: 12 });
   label(ctx, "base = L·cos θ = " + fLen(S.L * Math.cos(th)), x0 + bw / 2, yb + 18, css("--muted"), { align: "center", size: 12 });
-  $("tblMat").innerHTML = "<tr><th>Materiales en contacto</th><th>μₛ estática</th><th>μₖ cinética</th></tr>" +
-    MATERIALES.slice(0, N_TABLA).map(([n, k, e]) => `<tr${n === S.matName && Math.abs(k - S.mu) < 1e-9 && Math.abs(e - S.mus) < 1e-9 ? ' style="font-weight:700;outline:2px solid var(--accent)"' : ""}><td style="text-align:left">${n}</td><td>${e}</td><td>${k}</td></tr>`).join("");
+  const fila = m => `<tr${mid(m) === S.matName ? ' style="font-weight:700;outline:2px solid var(--accent)"' : ""}><td style="text-align:left">${m[0]}</td><td>${(m[5] || {}).s || m[2]}</td><td>${(m[5] || {}).k || m[1]}</td></tr>`;
+  $("tblMat").innerHTML = ["G", "T"].map(f => `<tr><th colspan="3" style="text-align:left">${FUENTES[f]}</th></tr><tr><th>Superficies</th><th>μₛ estática</th><th>μₖ cinética</th></tr>` +
+    MATERIALES.filter(m => m[3] === f).map(fila).join("")).join("");
 }
 
 /* ---------- Reporte PDF ---------- */
@@ -1226,6 +1283,8 @@ function reporte() {
     <h2>1. Parámetros</h2>
     <table><tr><th>Objeto</th><th>Tamaño</th><th>m</th><th>θ</th><th>h salida</th><th>L recorrida</th>${o.rueda ? "" : "<th>μₖ</th><th>μₛ</th>"}<th>g</th><th>v₀</th></tr>
       <tr><td>${o.rueda ? o.nombre + " (" + o.txt + ")" : "bloque"}</td><td>${fLen(S.size)}</td><td>${fMass(S.m)}</td><td>${S.theta}°</td><td>${fLen(H())}${S.Ht > 0 ? " (tabla " + fLen(S.Ht) + ")" : ""}</td><td>${fLen(S.L)}</td>${o.rueda ? "" : `<td>${S.mu.toFixed(3)}</td><td>${S.mus.toFixed(2)}</td>`}<td>${S.g.toFixed(2)} m/s²</td><td>0 m/s</td></tr></table>
+    ${o.rueda ? "" : `<p>Coeficientes de fricción: ${(MATERIALES.find(m => mid(m) === S.matName) || ["valor personalizado"])[0]}${(() => { const m = MATERIALES.find(m => mid(m) === S.matName); return m ? ", " + FUENTES[m[3]] : ""; })()}.
+      Fuente: Moyota Chuiza, E. A. (2023). Recurso didáctico como herramienta pedagógica para integrar aspectos teóricos y experimentales relacionados con la fuerza de fricción [Trabajo de titulación, Universidad Nacional de Chimborazo], Tablas 2.2 y 2.3, pp. 33 y 34.</p>`}
     <h2>2. Análisis de fuerzas y cálculo teórico</h2>
     <p>${o.rueda
       ? `N = mg cos θ;  mg sen θ − fₛ = ma;  fₛ r = I α  ⟹  a = g sen θ / (1 + k) = ${S.g.toFixed(2)} × ${Math.sin(th).toFixed(4)} / ${(1 + o.k).toFixed(3)} = <b>${fmt(a, 3)} m/s²</b>`
@@ -1283,7 +1342,7 @@ function syncInputs() {
     if (document.activeElement !== n) n.value = +v.toFixed(DEC[id]);
   });
   const igual = m => Math.abs(m[1] - S.mu) < 1e-9 && Math.abs(m[2] - S.mus) < 1e-9;
-  let mat = MATERIALES.findIndex(m => m[0] === S.matName && igual(m));
+  let mat = MATERIALES.findIndex(m => mid(m) === S.matName && igual(m));
   if (mat < 0) mat = MATERIALES.findIndex(igual);
   $("material").value = mat >= 0 ? mat : "x";
   $("obj").value = S.obj;
@@ -1335,7 +1394,8 @@ function loop(now) {
 }
 
 function init() {
-  $("material").innerHTML = MATERIALES.map((m, i) => `<option value="${i}">${m[0]} (μₖ ${+m[1].toFixed(3)}, μₛ ${m[2]})</option>`).join("") +
+  $("material").innerHTML = Object.keys(FUENTES).map(f => `<optgroup label="${FUENTES[f]}">` +
+    MATERIALES.map((m, i) => m[3] !== f ? "" : `<option value="${i}">${m[0]} (μₖ ${+m[1].toFixed(3)}, μₛ ${m[2]})</option>`).join("") + "</optgroup>").join("") +
     `<option value="x">Valor personalizado</option>`;
   Object.keys(UI).forEach(id => {
     // m y g no cambian el tiempo: no reinician la animación
@@ -1357,7 +1417,7 @@ function init() {
     if (e.target.value === "") return;
     Object.assign(S, PROYECTO, PRESETS[+e.target.value][1]); paramChanged();
   });
-  $("material").addEventListener("change", e => { if (e.target.value !== "x") { const m = MATERIALES[+e.target.value]; S.mu = m[1]; S.mus = m[2]; S.matName = m[0]; paramChanged(); } });
+  $("material").addEventListener("change", e => { if (e.target.value !== "x") { const m = MATERIALES[+e.target.value]; S.mu = m[1]; S.mus = m[2]; S.matName = mid(m); paramChanged(); } });
   $("btnReset").onclick = () => { Object.assign(S, PROYECTO); $("preset").value = "0"; paramChanged(); };
   $("btnPlay").onclick = () => {
     const T = tDesc();
