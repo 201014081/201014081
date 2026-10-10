@@ -220,12 +220,16 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
     </div>
     <div id="frictionCtrls">
       <div class="ctrl">
-        <label>Material (μₖ de tabla)</label>
+        <label>Materiales en contacto (tabla)</label>
         <select id="material"></select>
       </div>
       <div class="ctrl">
         <label>Coef. de fricción μₖ <span class="numw"><input class="num" id="nmu" type="number" step="0.01" min="0" max="1.5"></span></label>
         <input type="range" id="mu" min="0" max="1" step="0.01">
+      </div>
+      <div class="ctrl">
+        <label>Coef. estático μₛ (para arrancar) <span class="numw"><input class="num" id="nmus" type="number" step="0.01" min="0" max="1.5"></span></label>
+        <input type="range" id="mus" min="0" max="1.2" step="0.01">
       </div>
     </div>
     <div class="ctrl">
@@ -431,7 +435,8 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
             <li><b>Distancias cortas:</b> el tiempo crece con √L. Con 25 cm tarda la mitad que con 1 m. Mientras más corto, más importa tu tiempo de reacción: mejor medir con vídeo.</li>
             <li><b>Fricción estática:</b> para arrancar hay que vencer μₛ (mayor que μₖ). Si el bloque no arranca, dale un toque mínimo o aumenta el ángulo.</li>
           </ul>
-          <h3>Coeficientes de fricción cinética (Serway y Jewett, Tabla 5.1)</h3>
+          <h3>Coeficientes de rozamiento de algunas sustancias (tabla consultada)</h3>
+          <p class="note" style="margin-top:0">La fila remarcada es la que está usando la simulación. Recuerda citar la página de donde sacaste la tabla.</p>
           <table id="tblMat"></table>
         </div>
       </div>
@@ -446,31 +451,47 @@ td.cur { outline: 3px solid var(--ink); outline-offset: -3px; font-weight: 700; 
 "use strict";
 
 /* ---------- Datos del proyecto ---------- */
-const PROYECTO = { theta: 35, mu: 0.20, L: 1.00, m: 0.25, g: 9.81, obj: "bloque", size: 0.08, Ht: 0 };
+const PROYECTO = { theta: 35, mu: 0.20, mus: 0.40, L: 1.00, m: 0.25, g: 9.81, obj: "bloque", size: 0.08, Ht: 0, matName: "Madera // Madera (Serway, usado en tu documento)" };
+// Tabla "Coeficientes de rozamiento de algunas sustancias": [materiales, μₖ cinético, μₛ estático]
 const MATERIALES = [
-  ["Madera sobre madera", 0.20],
-  ["Vidrio sobre vidrio", 0.40],
-  ["Acero sobre acero", 0.57],
-  ["Aluminio sobre acero", 0.47],
-  ["Teflón sobre teflón", 0.04],
-  ["Hule sobre concreto seco", 0.80]
+  ["Hielo // Hielo", 0.03, 0.1],
+  ["Vidrio // Vidrio", 0.4, 0.9],
+  ["Vidrio // Madera", 0.2, 0.25],
+  ["Madera // Cuero", 0.3, 0.4],
+  ["Madera // Piedra", 0.3, 0.7],
+  ["Madera // Madera", 0.3, 0.4],
+  ["Acero // Acero", 0.57, 0.74],
+  ["Acero // Hielo", 0.02, 0.03],
+  ["Acero // Latón", 0.4, 0.5],
+  ["Acero // Teflón", 0.04, 0.04],
+  ["Teflón // Teflón", 0.04, 0.04],
+  ["Caucho // Cemento (seco)", 0.8, 1.0],
+  ["Caucho // Cemento (húmedo)", 0.25, 0.3],
+  ["Cobre // Hierro (fundido)", 0.3, 1.1],
+  ["Esquí (encerado) // Nieve (0 °C)", 0.05, 0.1],
+  ["Articulaciones humanas", 0.003, 0.01]
 ];
+const N_TABLA = MATERIALES.length;
 // μₖ de vidrio sobre madera obtenido de la prueba en vídeo: tabla a 30° con su extremo a 35 cm,
 // el bloque recorrió unos 55 cm (entre 50 y 60) en t ≈ 2 s  ⟹  a = 2L/t² y μₖ = (g sen θ − a)/(g cos θ)
 const PRUEBA = { theta: 30, L: 0.55, Ht: 0.35, t: 2.0 };
 const MU_PRUEBA = +((9.81 * Math.sin(rad0(PRUEBA.theta)) - 2 * PRUEBA.L / PRUEBA.t ** 2) / (9.81 * Math.cos(rad0(PRUEBA.theta)))).toFixed(3);
 function rad0(d) { return d * Math.PI / 180; }
-MATERIALES.push(["Vidrio sobre madera (tu prueba en vídeo)", MU_PRUEBA]);
+MATERIALES.push(["Vidrio // Madera calculado con tu tiempo de 2 s", MU_PRUEBA, 0.6], ["Madera // Madera (Serway, usado en tu documento)", 0.20, 0.40]);
 const PRESETS = [
-  ["Proyecto original: bloque de madera, 35°, L = 1.00 m", PROYECTO],
-  ["Mi prueba: bloque de vidrio 2×2 cm, 30°, tabla a 35 cm, recorrido 55 cm (t ≈ 2 s)",
-    { theta: PRUEBA.theta, L: PRUEBA.L, Ht: PRUEBA.Ht, mu: MU_PRUEBA, m: 0.010, obj: "bloque", size: 0.02 }],
+  ["Proyecto del documento: madera, 35°, L = 1.00 m, μₖ = 0.20 (Serway)", PROYECTO],
+  ["Proyecto con la nueva tabla: Madera // Madera, μₖ = 0.30, μₛ = 0.40",
+    { mu: 0.30, mus: 0.40, matName: "Madera // Madera" }],
+  ["Mi prueba con la tabla: bloque de vidrio 2×2 cm sobre madera (μₖ = 0.20), 30°, recorrido 55 cm",
+    { theta: PRUEBA.theta, L: PRUEBA.L, Ht: PRUEBA.Ht, mu: 0.20, mus: 0.25, matName: "Vidrio // Madera", m: 0.010, obj: "bloque", size: 0.02 }],
+  ["Mi prueba con el μₖ que sale de tu tiempo de 2 s (μₖ = " + MU_PRUEBA + ")",
+    { theta: PRUEBA.theta, L: PRUEBA.L, Ht: PRUEBA.Ht, mu: MU_PRUEBA, mus: 0.6, matName: "Vidrio // Madera calculado con tu tiempo de 2 s", m: 0.010, obj: "bloque", size: 0.02 }],
   ["Canica de vidrio (5 g, 1.6 cm) en la misma tabla: 30°, recorrido 55 cm",
-    { theta: PRUEBA.theta, L: PRUEBA.L, Ht: PRUEBA.Ht, m: 0.005, obj: "canica", size: 0.016 }],
+    { theta: PRUEBA.theta, L: PRUEBA.L, Ht: PRUEBA.Ht, mu: 0.20, mus: 0.25, matName: "Vidrio // Madera", m: 0.005, obj: "canica", size: 0.016 }],
   ["Bloquecito de madera (3 cm, 15 g), 30°, altura 25 cm",
-    { theta: 30, L: 0.50, mu: 0.20, m: 0.015, obj: "bloque", size: 0.03 }],
+    { theta: 30, L: 0.50, mu: 0.30, mus: 0.40, matName: "Madera // Madera", m: 0.015, obj: "bloque", size: 0.03 }],
   ["Canica en rampa corta: 20°, L = 30 cm",
-    { theta: 20, L: 0.30, m: 0.005, obj: "canica", size: 0.016 }]
+    { theta: 20, L: 0.30, mu: 0.20, mus: 0.25, m: 0.005, obj: "canica", size: 0.016 }]
 ];
 // Objetos que ruedan sin deslizar: k = I / (m r²)
 const OBJETOS = {
@@ -797,13 +818,15 @@ function drawSim() {
     msg.innerHTML = `<div class="alert bad">El bloque <b>no desliza</b>: tan ${S.theta.toFixed(1)}° = ${Math.tan(th).toFixed(3)} ≤ μₖ = ${S.mu.toFixed(2)}. Aumenta el ángulo por encima de ${(Math.atan(S.mu) * 180 / Math.PI).toFixed(1)}° o usa un material con menos fricción.</div>`;
   } else if (o.rueda) {
     msg.innerHTML = `<div class="alert ok">La ${o.nombre} <b>rueda sin deslizar</b> (${o.txt}): a = g·sen θ / (1 + ${+o.k.toFixed(3)}). El tiempo no depende de la masa, del tamaño ni del μₖ.
-      Rueda sin resbalar mientras μₛ ≥ ${(o.k * Math.tan(th) / (1 + o.k)).toFixed(2)}.</div>`;
+      Rueda sin resbalar mientras μₛ ≥ ${(o.k * Math.tan(th) / (1 + o.k)).toFixed(2)} (ahora μₛ = ${S.mus.toFixed(2)}).</div>`;
   } else if (Math.tan(th) < S.mu * 1.25) {
     const t2 = tDesc(S.theta, S.mu + 0.03), t3 = tDesc(S.theta + 5);
     msg.innerHTML = `<div class="alert warn"><b>Cerca del límite:</b> tan ${S.theta}° = ${Math.tan(th).toFixed(3)} apenas supera μₖ = ${S.mu.toFixed(3)}, así que la fricción casi equilibra al peso.
       Aquí el tiempo es muy sensible: si μₖ sube solo 0.03, el tiempo pasa de ${fmt(T, 2)} s a ${Number.isFinite(t2) ? t2.toFixed(2) + " s" : "no bajar"}.
       Con 5° más (${S.theta + 5}°) tardaría ${fmt(t3, 2)} s y tus mediciones serían más estables.</div>`;
   } else msg.innerHTML = "";
+  if (!o.rueda && a > 0 && Math.tan(th) <= S.mus)
+    msg.innerHTML += `<div class="alert warn" style="margin-top:6px">Con μₛ = ${S.mus.toFixed(2)} el bloque <b>no arranca solo</b> (tan ${S.theta}° = ${Math.tan(th).toFixed(3)}): hay que darle un toque. Una vez en movimiento sigue bajando con μₖ = ${S.mu.toFixed(2)}.</div>`;
   if (tablaTxt()) msg.innerHTML += `<p class="note" style="margin:6px 0 0">${tablaTxt().trim()}</p>`;
 }
 
@@ -891,13 +914,19 @@ function drawForces() {
   const tan = Math.tan(th), maxv = Math.max(1.2, tan * 1.1, lim * 1.1);
   const L0 = 20, W0 = c2.w - 40, Xv = v => L0 + v / maxv * W0;
   if (!o.rueda) {
+    const ms = Math.max(S.mus, S.mu);
     ct.fillStyle = css("--bad-soft"); ct.fillRect(L0, 34, Xv(S.mu) - L0, 30);
-    ct.fillStyle = css("--ok-soft"); ct.fillRect(Xv(S.mu), 34, L0 + W0 - Xv(S.mu), 30);
-    label(ct, "no desliza", (L0 + Xv(S.mu)) / 2, 49, css("--bad"), { size: 12, align: "center" });
-    label(ct, "desliza", (Xv(S.mu) + L0 + W0) / 2, 49, css("--ok"), { size: 12, align: "center" });
+    ct.fillStyle = css("--warn-soft"); ct.fillRect(Xv(S.mu), 34, Xv(ms) - Xv(S.mu), 30);
+    ct.fillStyle = css("--ok-soft"); ct.fillRect(Xv(ms), 34, L0 + W0 - Xv(ms), 30);
+    label(ct, "no baja", (L0 + Xv(S.mu)) / 2, 49, css("--bad"), { size: 12, align: "center" });
+    if (Xv(ms) - Xv(S.mu) > 60) label(ct, "con un toque", (Xv(S.mu) + Xv(ms)) / 2, 49, css("--ink"), { size: 12, align: "center" });
+    label(ct, "arranca solo", (Xv(ms) + L0 + W0) / 2, 49, css("--ok"), { size: 12, align: "center" });
     ct.strokeStyle = css("--friction"); ct.lineWidth = 3;
     ct.beginPath(); ct.moveTo(Xv(S.mu), 26); ct.lineTo(Xv(S.mu), 72); ct.stroke();
-    label(ct, "μₖ = " + S.mu.toFixed(2), Xv(S.mu), 16, css("--friction"), { bold: true, align: "center" });
+    ct.beginPath(); ct.moveTo(Xv(ms), 26); ct.lineTo(Xv(ms), 72); ct.stroke();
+    const close = Xv(ms) - Xv(S.mu) < 70;
+    label(ct, "μₖ = " + S.mu.toFixed(2), Xv(S.mu), 16, css("--friction"), { bold: true, align: close ? "right" : "center" });
+    label(ct, "μₛ = " + S.mus.toFixed(2), Xv(ms) + (close ? 4 : 0), 16, css("--friction"), { bold: true, align: close ? "left" : "center" });
     ct.fillStyle = css("--ink"); ct.beginPath(); ct.moveTo(Xv(tan), 66); ct.lineTo(Xv(tan) - 8, 82); ct.lineTo(Xv(tan) + 8, 82); ct.fill();
     label(ct, "tan θ = " + tan.toFixed(3), Xv(tan), 98, css("--ink"), { bold: true, align: "center" });
   } else {
@@ -907,9 +936,14 @@ function drawForces() {
   $("tanTitle").textContent = o.rueda ? "¿Rueda o resbala?" : "¿El bloque desliza?";
   const thc = Math.atan(S.mu) * 180 / Math.PI;
   $("tanMsg").innerHTML = o.rueda
-    ? `<div class="alert ok">La ${o.nombre} rueda: no se arrastra, así que la fricción no le quita energía. Solo necesita μₛ ≥ ${lim.toFixed(2)} para no resbalar (madera y vidrio cumplen de sobra).</div>`
+    ? `<div class="alert ${S.mus >= lim ? "ok" : "warn"}">La ${o.nombre} rueda: no se arrastra, así que la fricción no le quita energía. Necesita μₛ ≥ ${lim.toFixed(2)} para no resbalar;
+       con μₛ = ${S.mus.toFixed(2)} ${S.mus >= lim ? "rueda sin resbalar" : "resbalaría un poco mientras gira, y bajaría algo más rápido que lo calculado"}.</div>`
+    : tan > Math.max(S.mus, S.mu)
+    ? `<div class="alert ok">Arranca solo y desliza: tan θ = ${tan.toFixed(3)} es mayor que μₛ = ${S.mus.toFixed(2)} (para arrancar) y que μₖ = ${S.mu.toFixed(2)} (para seguir bajando).
+       Ángulo mínimo para arrancar solo: ${(Math.atan(S.mus) * 180 / Math.PI).toFixed(1)}°.</div>`
     : tan > S.mu
-    ? `<div class="alert ok">Sí desliza: tan θ = ${tan.toFixed(3)} &gt; μₖ = ${S.mu.toFixed(2)}. Ángulo mínimo para deslizar: ${thc.toFixed(1)}°.</div>`
+    ? `<div class="alert warn">No arranca solo: tan θ = ${tan.toFixed(3)} no supera μₛ = ${S.mus.toFixed(2)}. Pero si le das un toque, sigue bajando porque supera μₖ = ${S.mu.toFixed(2)}.
+       Para que arranque solo necesitas más de ${(Math.atan(S.mus) * 180 / Math.PI).toFixed(1)}°.</div>`
     : `<div class="alert bad">No desliza: tan θ = ${tan.toFixed(3)} ≤ μₖ = ${S.mu.toFixed(2)}. Necesitas más de ${thc.toFixed(1)}°.</div>`;
 
   $("eqF").innerHTML = `
@@ -1093,6 +1127,9 @@ function drawRegistro() {
         Si sale menor, puede deberse a que la tabla no es lisa, a la resistencia a la rodadura o a que la ${o.nombre} resbaló.${s.n < 5 ? " Recuerda hacer al menos 5 mediciones." : ""}</p>`
       : `<p class="note">Con tu promedio, la aceleración real fue a = 2L/t² = 2 × ${S.L.toFixed(3)} / ${s.prom.toFixed(3)}² = ${s.aexp.toFixed(3)} m/s², lo que equivale a un
         μₖ real de ${s.muexp.toFixed(3)}:  μₖ = (g sen θ − a) / (g cos θ). (Valor actual en la simulación: ${S.mu.toFixed(3)}.)${s.n < 5 ? " Recuerda hacer al menos 5 mediciones." : ""}</p>`;
+    if (!o.rueda && Math.abs(s.muexp - S.mu) > 0.1) msg += `<div class="alert warn" style="margin-top:6px">Tu tiempo indica μₖ ≈ ${s.muexp.toFixed(2)}, pero la simulación usa ${S.mu.toFixed(2)}.
+      Si la diferencia es real, puede deberse a: que la tabla no está pulida (madera sin lijar o con polvo), a contar el tiempo desde antes de soltar
+      o hasta después de llegar, a que el bloque no salió desde el reposo de forma limpia, o a que el ángulo real es distinto. Prueba medir sobre el vídeo, cuadro por cuadro.</div>`;
     if (s.prom < 1) msg += `<p class="note">Tiempos menores de 1 s: tu reacción (0.1 a 0.2 s) puede ser más del 10 % del tiempo. Mide sobre el vídeo en cámara lenta.</p>`;
   } else msg = `<p class="note">Aún no hay mediciones. Escribe tus tiempos o usa el cronómetro.</p>`;
   $("regMsg").innerHTML = msg;
@@ -1164,8 +1201,8 @@ function drawTeoria() {
   label(ctx, "θ = " + S.theta + "°", x0 + bw - 54, yb - 14, css("--ink"), { bold: true, align: "right" });
   label(ctx, "h = L·sen θ = " + fLen(H()), x0 - 8, yb - hh / 2, css("--muted"), { align: "right", size: 12 });
   label(ctx, "base = L·cos θ = " + fLen(S.L * Math.cos(th)), x0 + bw / 2, yb + 18, css("--muted"), { align: "center", size: 12 });
-  $("tblMat").innerHTML = "<tr><th>Materiales</th><th>μₖ (aprox.)</th></tr>" +
-    MATERIALES.slice(0, 6).map(([n, v]) => `<tr><td style="text-align:left">${n}</td><td>${v.toFixed(2)}</td></tr>`).join("");
+  $("tblMat").innerHTML = "<tr><th>Materiales en contacto</th><th>μₛ estática</th><th>μₖ cinética</th></tr>" +
+    MATERIALES.slice(0, N_TABLA).map(([n, k, e]) => `<tr${n === S.matName && Math.abs(k - S.mu) < 1e-9 && Math.abs(e - S.mus) < 1e-9 ? ' style="font-weight:700;outline:2px solid var(--accent)"' : ""}><td style="text-align:left">${n}</td><td>${e}</td><td>${k}</td></tr>`).join("");
 }
 
 /* ---------- Reporte PDF ---------- */
@@ -1187,8 +1224,8 @@ function reporte() {
     <h1>Proyecto del Plano Inclinado</h1>
     <div>Determinación teórica y experimental del tiempo de descenso${o.rueda ? " de una " + o.nombre + " que rueda" : " de un bloque con fricción cinética"}. Reporte generado el ${new Date().toLocaleDateString("es-GT")}.</div>
     <h2>1. Parámetros</h2>
-    <table><tr><th>Objeto</th><th>Tamaño</th><th>m</th><th>θ</th><th>h salida</th><th>L recorrida</th>${o.rueda ? "" : "<th>μₖ</th>"}<th>g</th><th>v₀</th></tr>
-      <tr><td>${o.rueda ? o.nombre + " (" + o.txt + ")" : "bloque"}</td><td>${fLen(S.size)}</td><td>${fMass(S.m)}</td><td>${S.theta}°</td><td>${fLen(H())}${S.Ht > 0 ? " (tabla " + fLen(S.Ht) + ")" : ""}</td><td>${fLen(S.L)}</td>${o.rueda ? "" : `<td>${S.mu.toFixed(3)}</td>`}<td>${S.g.toFixed(2)} m/s²</td><td>0 m/s</td></tr></table>
+    <table><tr><th>Objeto</th><th>Tamaño</th><th>m</th><th>θ</th><th>h salida</th><th>L recorrida</th>${o.rueda ? "" : "<th>μₖ</th><th>μₛ</th>"}<th>g</th><th>v₀</th></tr>
+      <tr><td>${o.rueda ? o.nombre + " (" + o.txt + ")" : "bloque"}</td><td>${fLen(S.size)}</td><td>${fMass(S.m)}</td><td>${S.theta}°</td><td>${fLen(H())}${S.Ht > 0 ? " (tabla " + fLen(S.Ht) + ")" : ""}</td><td>${fLen(S.L)}</td>${o.rueda ? "" : `<td>${S.mu.toFixed(3)}</td><td>${S.mus.toFixed(2)}</td>`}<td>${S.g.toFixed(2)} m/s²</td><td>0 m/s</td></tr></table>
     <h2>2. Análisis de fuerzas y cálculo teórico</h2>
     <p>${o.rueda
       ? `N = mg cos θ;  mg sen θ − fₛ = ma;  fₛ r = I α  ⟹  a = g sen θ / (1 + k) = ${S.g.toFixed(2)} × ${Math.sin(th).toFixed(4)} / ${(1 + o.k).toFixed(3)} = <b>${fmt(a, 3)} m/s²</b>`
@@ -1225,12 +1262,13 @@ const UI = {   // id: [valor en el panel, convertir del panel a S]
   h:     [() => H() * 100, v => { S.L = clampL(v / 100 / Math.sin(rad(S.theta))); }],
   L:     [() => S.L * 100, v => { S.L = clampL(v / 100); }],
   mu:    [() => S.mu, v => { S.mu = Math.max(0, v); }],
+  mus:   [() => S.mus, v => { S.mus = Math.max(0, v); }],
   size:  [() => S.size * 100, v => { S.size = Math.max(0.002, v / 100); }],
   m:     [() => S.m * 1000, v => { S.m = Math.max(0.0005, v / 1000); }],
   g:     [() => S.g, v => { S.g = v; }],
   Ht:    [() => S.Ht * 100, v => { S.Ht = Math.max(0, v / 100); }]
 };
-const DEC = { theta: 1, h: 1, L: 1, mu: 3, size: 1, m: 1, g: 2, Ht: 1 };
+const DEC = { theta: 1, h: 1, L: 1, mu: 3, mus: 3, size: 1, m: 1, g: 2, Ht: 1 };
 function clampL(L) { return Math.min(3, Math.max(0.02, L)); }
 function setTheta(v) {
   const h0 = H();
@@ -1244,7 +1282,9 @@ function syncInputs() {
     const n = $("n" + id);
     if (document.activeElement !== n) n.value = +v.toFixed(DEC[id]);
   });
-  const mat = MATERIALES.findIndex(m => Math.abs(m[1] - S.mu) < 1e-9);
+  const igual = m => Math.abs(m[1] - S.mu) < 1e-9 && Math.abs(m[2] - S.mus) < 1e-9;
+  let mat = MATERIALES.findIndex(m => m[0] === S.matName && igual(m));
+  if (mat < 0) mat = MATERIALES.findIndex(igual);
   $("material").value = mat >= 0 ? mat : "x";
   $("obj").value = S.obj;
   $("frictionCtrls").style.opacity = OB().rueda ? 0.55 : 1;
@@ -1256,7 +1296,7 @@ function cargarParams() {
   try {
     const v = JSON.parse(localStorage.getItem("plano-inclinado-params"));
     if (v && typeof v === "object") Object.keys(PROYECTO).forEach(k => {
-      if (k === "obj" ? OBJETOS[v[k]] : Number.isFinite(v[k])) S[k] = v[k];
+      if (k === "obj" ? OBJETOS[v[k]] : k === "matName" ? typeof v[k] === "string" : Number.isFinite(v[k])) S[k] = v[k];
     });
   } catch (e) {}
 }
@@ -1295,18 +1335,18 @@ function loop(now) {
 }
 
 function init() {
-  $("material").innerHTML = MATERIALES.map((m, i) => `<option value="${i}">${m[0]} (${+m[1].toFixed(3)})</option>`).join("") +
+  $("material").innerHTML = MATERIALES.map((m, i) => `<option value="${i}">${m[0]} (μₖ ${+m[1].toFixed(3)}, μₛ ${m[2]})</option>`).join("") +
     `<option value="x">Valor personalizado</option>`;
   Object.keys(UI).forEach(id => {
     // m y g no cambian el tiempo: no reinician la animación
-    const apply = () => { if (id === "m" || id === "g" || id === "size" || id === "Ht") { syncInputs(); guardarParams(); render(); } else paramChanged(); };
+    const apply = () => { if (id === "m" || id === "g" || id === "size" || id === "Ht" || id === "mus") { syncInputs(); guardarParams(); render(); } else paramChanged(); };
     $(id).addEventListener("input", e => {
       const v = Number(e.target.value);
       UI[id][1](id === "m" ? Math.pow(10, v) : v); apply();
     });
     $("n" + id).addEventListener("input", e => {
       const v = Number(e.target.value);
-      if (e.target.value === "" || !Number.isFinite(v) || v < 0 || v === 0 && id !== "mu" && id !== "Ht") return;
+      if (e.target.value === "" || !Number.isFinite(v) || v < 0 || v === 0 && id !== "mu" && id !== "mus" && id !== "Ht") return;
       UI[id][1](v); apply();
     });
     $("n" + id).addEventListener("change", () => syncInputs());
@@ -1317,7 +1357,7 @@ function init() {
     if (e.target.value === "") return;
     Object.assign(S, PROYECTO, PRESETS[+e.target.value][1]); paramChanged();
   });
-  $("material").addEventListener("change", e => { if (e.target.value !== "x") { S.mu = MATERIALES[+e.target.value][1]; paramChanged(); } });
+  $("material").addEventListener("change", e => { if (e.target.value !== "x") { const m = MATERIALES[+e.target.value]; S.mu = m[1]; S.mus = m[2]; S.matName = m[0]; paramChanged(); } });
   $("btnReset").onclick = () => { Object.assign(S, PROYECTO); $("preset").value = "0"; paramChanged(); };
   $("btnPlay").onclick = () => {
     const T = tDesc();
